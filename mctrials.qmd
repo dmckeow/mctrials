@@ -8,7 +8,14 @@ format: html
 ### Bugs
 
 ### Pipeline, workflow, function, etc
+* Command line entry point needs to be clear
+  * Users who can't/won't run MCHelper, TEAid or (or 80-80-80?) through app need clear instructions on how they need to run these tools externally so that they can load them in the app and do manual inspection
+  * A very nice thing would be a Nextflow pipeline (I can write this later) that will make running the pre-manual inspection auto steps easy to run
 * 80-80-80 should happen before first curation step
+* Button to download final results
+  * And message to tell user their path
+* Most of the steps do not appear automatically when they are done - the results do not appear until you either click Run again, or refresh manually
+* Running the 80-80-80 and 70-70-70 and incomplete steps is strange, they can complete but it is not very clear to the user what has happened
 * TEs classes that RepeatModeler is bad at should be classified by their dedicated tools and integrated BEFORE the manual curation:
   * Helitrons
   * Polintons/Mavericks - Polinton detection can be expanded for specific lineages using HMM homology against an expanded database of polinton MCP/pPolB https://link.springer.com/article/10.1186/s40168-025-02148-0#Sec16
