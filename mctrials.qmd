@@ -1,0 +1,30 @@
+---
+title: "Manual curation trials"
+date: 2025-07-14
+format: html
+---
+
+**Bold** = shared with team
+### Bugs
+
+### Pipeline, workflow, function, etc
+* 80-80-80 should happen before first curation step
+* TEs classes that RepeatModeler is bad at should be classified by their dedicated tools and integrated BEFORE the manual curation:
+  * Helitrons
+  * Polintons/Mavericks - Polinton detection can be expanded for specific lineages using HMM homology against an expanded database of polinton MCP/pPolB https://link.springer.com/article/10.1186/s40168-025-02148-0#Sec16
+
+### QoL features
+#### Input data
+* **Make species & strain mandatory - give error if no species name provided**
+* **Auto replace spaces with underscore in paths/files named using species/strain**
+  *** Also do not permit other bad characters in species/strain names**
+* **Delete button for Input Data**
+* **Various steps need indication that they are running:**
+  * **BUSCO**
+* **Keep original copies visible after trimming to compare before vs after trimming copy numbers**
+
+#### General
+* **Output of TEammo.log could be accessible through app**
+
+## TEaid issues
+### TE category problems
