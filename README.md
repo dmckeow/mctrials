@@ -132,43 +132,36 @@ cp $log mchelper_automatic.log
 mkdir -p 1_MI_MCH
 cd 1_MI_MCH
 
-####
-# Ok so we just have to TEAid independently through MCHelper - but only the version forked by Adrian
-conda activate MCHelper
-python3 ~/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ../N2_sub3-clean_families.fa \
--g ../../../../0_raw/C.elegans/N2_sub3/N2_subset3.fna \
--o ./ \
--t 1 > ../mchelper_manual.log
+
 
 ```
 
 # Script version of this (cluster)
+Ok so we just have to TEAid independently through MCHelper - but only the version forked by Adrian
+
 ```{bash}
 # On cluster!
 
 cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/C.elegans/N2_sub3
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/prep_external_MCHelper.sh \
+sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
 -l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/C.elegans/N2_sub3/N2_sub3-families.fa \
 -g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/C.elegans/N2_sub3/N2_subset3.fna \
 -s N2_sub3
 
 cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/prep_external_MCHelper.sh \
+sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
 -l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq-families.fa \
 -g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq.fasta \
 -s STO_CAGO_1482_RefSeq
 
 cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/D.tristis/nanopore_D2
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/prep_external_MCHelper.sh \
+sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
 -l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2-families.fa \
 -g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.tristis/nanopore_D2/D.tristis_nanopore_D2.fasta \
 -s nanopore_D2
 
 cd /home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials/data/MCH_output/D.merina/NA
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/prep_external_MCHelper.sh \
+sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
 -l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/D.merina/NA/D.merina-families.fa \
 -g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.merina/NA/D.merina.rm.fasta \
 -s NA

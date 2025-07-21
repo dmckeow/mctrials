@@ -19,9 +19,9 @@ eval "$(conda shell.bash hook)"
 # Parse command-line options
 while getopts ":l:g:s:h" option; do
     case "${option}" in
-        l) library=${OPTARG} ;;       # -l for library file from RM2
-        g) genome=${OPTARG} ;;        # -g for genome file
-        s) strain=${OPTARG} ;;        # TO name clean families file
+        l) library=${OPTARG} ;;
+        g) genome=${OPTARG} ;;
+        s) strain=${OPTARG} ;;        # To name clean families file
         h) echo "Usage: bash script.sh -l <library.fa> -g <genome.fa> -s <strain_name>"; exit 0 ;;
         \?) echo "Invalid option: -$OPTARG"; exit 1 ;;
         :) echo "Option -$OPTARG requires an argument."; exit 1 ;;
@@ -41,8 +41,8 @@ awk '!/Satellite|Simple_repeat|tRNA|rRNA|Retroposon|snRNA|scRNA/' $library | \
 sed 's/^>//g' | \
 seqkit grep -n -f - $library > $clean_lib
 
-log=$(ls -t *.out | head -1)
-cp $log mchelper_automatic.log
+#log=$(ls -t *.out | head -1) 
+#cp $log mchelper_automatic.log # made by redirect in first script instead
 
 # Close, can see the listed files, it just freezes
 mkdir -p 1_MI_MCH
@@ -50,11 +50,11 @@ cd 1_MI_MCH
 
 ####
 # Ok so we just have to TEAid independently through MCHelper - but only the version forked by Adrian
+# Input must be the autocurated lib from MCHelper!
 conda activate MCHelper
-#python3 ~/TEammo/mchelper-ats/MCHelper.py \
 python3 /mnt/netapp2/Store_csgcyjgp/dean/mctrials/TEammo/mchelper-ats/MCHelper.py \
 -r T \
 --input_type fasta \
--l $clean_lib \
+-l ../curated_sequences_NR.fa \
 -g $genome \
--o ./ > ../mchelper_manual.log
+-o . > ../mchelper_manual.log
