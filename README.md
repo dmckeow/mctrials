@@ -111,27 +111,23 @@ cd -
 
 cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/C.elegans/N2_sub3
 sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
--l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/C.elegans/N2_sub3/N2_sub3-families.fa \
--g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/C.elegans/N2_sub3/N2_subset3.fna \
--s N2_sub3
+-g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/C.elegans/N2_sub3/N2_subset3.fna
+
+cd /home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials/data/MCH_output/D.miranda/v2.1_MSH22_RefSeq
+sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
+-g /home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials/data/0_raw/D.miranda/v2.1_MSH22_RefSeq/D.miranda_v2.1_MSH22_RefSeq.fasta
 
 cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq
 sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
--l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq-families.fa \
--g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq.fasta \
--s STO_CAGO_1482_RefSeq
+-g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq.fasta
 
 cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/D.tristis/nanopore_D2
 sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
--l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2-families.fa \
--g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.tristis/nanopore_D2/D.tristis_nanopore_D2.fasta \
--s nanopore_D2
+-g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.tristis/nanopore_D2/D.tristis_nanopore_D2.fasta
 
 cd /home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials/data/MCH_output/D.merina/NA
 sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/batch_mchelper_teaid.sh \
--l /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/RM2_output/D.merina/NA/D.merina-families.fa \
--g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.merina/NA/D.merina.rm.fasta \
--s NA
+-g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.merina/NA/D.merina.rm.fasta
 
 ```
 
