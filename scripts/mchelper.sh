@@ -1,18 +1,19 @@
 #!/bin/bash
 # -----------------------------Name of the job-------------------------
-#SBATCH --job-name=batch_mchelper
+#SBATCH --job-name=mchelper
 #-----------------------------Output files-----------------------------
-#SBATCH --output=batch_mchelper.%j.out
-#SBATCH --error=batch_mchelper.%j.err
+#SBATCH --output=mchelper.%j.out
+#SBATCH --error=mchelper.%j.err
 #-----------------------------Required resources-----------------------
-#SBATCH --time=36:00:00
+#SBATCH --time=7-00:00:00
 #SBATCH -c 8
-#SBATCH --mem 48GB
+#SBATCH --mem-per-cpu=6G
 #-----------------------------Modules----------------------------------
 module load miniconda3/4.9.2
 eval "$(conda shell.bash hook)"
 
-#which python
+THREADS="${SLURM_CPUS_PER_TASK:-8}"
+echo "Using ${THREADS} cores"
 
 # Parse command-line options
 while getopts ":s:n:l:g:b:h" option; do
@@ -35,11 +36,14 @@ fi
 
 # Prepare the clean library
 clean_lib=$(echo $PWD"/"$strain"-clean_families.fa")
-conda activate bioinf # This is where i keep common tools
-awk '/^>/' $library | \
-awk '!/Satellite|Simple_repeat|tRNA|rRNA|Retroposon|snRNA|scRNA/' $library | \
-sed 's/^>//g' | \
-seqkit grep -n -f - $library > $clean_lib
+if [ ! -f "$clean_lib" ]; then
+    echo "Making clean library for MCHelper input"
+    conda activate bioinf # This is where i keep common tools
+    awk '/^>/' $library | \
+    awk '!/Satellite|Simple_repeat|tRNA|rRNA|Retroposon|snRNA|scRNA/' $library | \
+    sed 's/^>//g' | \
+    seqkit grep --threads $THREADS -n -f - $library > $clean_lib
+fi
 
 # The outputs go to pwd
 # By default MCHelper uses all available cores
@@ -54,5 +58,6 @@ python3 /mnt/netapp2/Store_csgcyjgp/dean/mctrials/TEammo/mchelper-ats/MCHelper.p
 -g $genome \
 -b $BUSCO \
 -o . \
--c 1 > mchelper_automatic.log
+-c 1 \
+-t $THREADS > mchelper_automatic.log
 
