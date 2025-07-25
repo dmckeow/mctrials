@@ -102,21 +102,14 @@ cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/C.elegans/
 sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/mchelper_teaid.sh \
 -g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/C.elegans/N2_sub3/N2_subset3.fna
 
-cd /home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials/data/MCH_output/D.miranda/v2.1_MSH22_RefSeq
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/mchelper_teaid.sh \
--g /home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials/data/0_raw/D.miranda/v2.1_MSH22_RefSeq/D.miranda_v2.1_MSH22_RefSeq.fasta
-
-cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/mchelper_teaid.sh \
--g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq.fasta
-
-cd /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/MCH_output/D.tristis/nanopore_D2
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/mchelper_teaid.sh \
--g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.tristis/nanopore_D2/D.tristis_nanopore_D2.fasta
-
-cd /home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials/data/MCH_output/D.merina/NA
-sbatch /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/scripts/mchelper_teaid.sh \
--g /mnt/netapp2/Store_csgcyjgp/dean/mctrials/mctrials/data/0_raw/D.merina/NA/D.merina.rm.fasta
+# make batch running file for this:
+while IFS=, read -r species strain genome_path rm2_library_path busco_lib; do
+    [[ -z "$species" || "$species" == \#* ]] && continue
+    echo "cd data/MCH_output/${species}/${strain}; \
+        sbatch $(realpath scripts/mchelper_teaid.sh) \
+        -g $(realpath data/0_raw/${species}/${strain}/$(basename $genome_path)); \
+        cd -"
+done < "$csv_file" | sed -E 's/ +/ /g' > batch_run_mchelper_teaid_sh
 
 ```
 
