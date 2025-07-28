@@ -20,9 +20,9 @@ mkdir -p data data/RM2_output data/MCH_output data/0_raw data/BUSCO_libs
 csv_file="species_strains.csv"
 sed -i -z 's/$/\n/1' $csv_file
 
-# Loop through all subdirectories in data/, excluding BUSCO_libs
+# Loop through all subdirectories in data/, excluding BUSCO_libs and db
 for dir in data/*/; do
-    [[ "$(basename "$dir")" == "BUSCO_libs" ]] && continue
+    [[ "$(basename "$dir")" == "BUSCO_libs" || "$(basename "$dir")" == "db" ]] && continue
 
     # mkdir for species, strain
     while IFS=, read -r species strain genome_path rm2_library_path busco_lib; do
