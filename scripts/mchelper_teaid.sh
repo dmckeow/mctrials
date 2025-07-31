@@ -7,7 +7,7 @@
 #-----------------------------Required resources-----------------------
 #SBATCH --time=3-00:00:00
 #SBATCH -c 8
-#SBATCH --mem-per-cpu=6G
+#SBATCH --mem-per-cpu=8G
 #-----------------------------Modules----------------------------------
 module load miniconda3/4.9.2
 eval "$(conda shell.bash hook)"

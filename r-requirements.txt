@@ -1,0 +1,7 @@
+plotly
+dplyr
+ggplot2
+BiocParallel
+Biostrings
+tidyr
+seqinr
