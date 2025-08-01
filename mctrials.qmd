@@ -1,7 +1,15 @@
 ---
 title: "Manual curation trials"
 date: 2025-07-14
-format: html
+execute:
+  warning: false
+format:
+  html:
+    self-contained: true
+    fig-height: 12
+    fig-width: 12
+    fig-format: png
+    fig-dpi: 300
 ---
 
 # Comparing results of different TEammo curators
@@ -9,28 +17,27 @@ format: html
 ## Run BLASTs between curated libraries
 
 ```{bash}
+#| eval: false
+
 mkdir -p results
 
 # Make the blastdbs - they are output in same folder as the fasta input
 conda activate MCHelper
 while IFS=',' read -r species strain marta dean; do
   makeblastdb -in ${marta} -dbtype "nucl"
-  #makeblastdb -in ${dean} -dbtype "nucl"
 done < <(sed '1d' curated_libs.csv)
 
 # Run BLASTS - reciprocal not needed
 while IFS=',' read -r species strain marta dean; do
-  #blastn -query ${marta} -db ${dean} -outfmt 6 -max_hsps 1 -out results/${species}_${strain}_marta_vs_dean.blast.out
   blastn -query ${dean} -db ${marta} -outfmt 6 -max_hsps 1 -out results/${species}_${strain}_dean_vs_marta.blast.out
 done < <(sed '1d' curated_libs.csv)
 
-
-# 
-# cat("blastn -query final_curated_NR_Adri.fa -db final_curated_NR_80Simon.fa -outfmt 6 -qcov_hsp_perc 80 -perc_identity 80 -max_hsps 1 -out adri_vs_Marta.blast.out")
 ```
 
 ## Visualisation
 ```{r}
+#| output: false
+
 if(!require("BiocManager", character.only = T)) install.packages("BiocManager")
 pkgs.list <- readLines("r-requirements.txt")
 
@@ -44,6 +51,7 @@ for (i in 1:length(pkgs.list)){
 
 ## Load and overall comparisons
 ```{r}
+#| output: false
 setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
 source("scripts/mccompare_functions.R")
 
@@ -57,72 +65,224 @@ teClassification <- rbind(
 )
 
 # Load libraries to compare
-lib1 <- teReadLib("../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta", libIdentifier = "Marta", species = "D.tristis", strain = "nanopore_D2")
-lib2 <- teReadLib("data/MCH_output/D.tristis/nanopore_D2/MCH_final/final_curated_NR.fa", libIdentifier = "Dean", species = "D.tristis", strain = "nanopore_D2")
 
-lib3 <- teReadLib("../../data/final_libraries/D.merina/D.merina.TE_library.fasta", libIdentifier = "Marta", species = "D.merina", strain = "NA")
-lib4 <- teReadLib("data/MCH_output/D.merina/NA/MCH_final/final_curated_NR.fa", libIdentifier = "Dean", species = "D.merina", strain = "NA")
+# Drosophila birchii
+lib_Dbir_marta <- teReadLib(
+  "../../data/final_libraries/D.birchii/D.birchii.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.birchii",
+  strain = "v1.0_00_GenBank")
+
+lib_Dbir_dean <- teReadLib(
+  "data/MCH_output/D.birchii/v1.0_00_GenBank/D.birchii_v1.0_00_GenBank_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.birchii",
+  strain = "v1.0_00_GenBank")
+
+# Drosophila merina
+lib_Dmer_marta <- teReadLib(
+  "../../data/final_libraries/D.merina/D.merina.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.merina", strain = "NA")
+
+lib_Dmer_dean <- teReadLib(
+  "data/MCH_output/D.merina/NA/D.merina_NA_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.merina", strain = "NA")
+
+# Drosophila santomea
+lib_Dsan_marta <- teReadLib(
+  "../../data/final_libraries/D.birchii/D.birchii.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.santomea",
+  strain = "STO_CAGO_1482_RefSeq")
+
+lib_Dsan_dean <- teReadLib(
+  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.santomea",
+  strain = "STO_CAGO_1482_RefSeq")
 
 
+# Drosophila tristis
+lib_Dtri_marta <- teReadLib(
+  "../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.tristis", strain = "nanopore_D2")
 
+lib_Dtri_dean <- teReadLib(
+  "data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.tristis", strain = "nanopore_D2")
 
-#D.santomea,STO_CAGO_1482_RefSeq,../../data/final_libraries/D.santomea/D.santomea.TE_library.fasta,data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/MCH_final/final_curated_NR.fa
-#D.tristis,nanopore_D2,../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta,data/MCH_output/D.tristis/nanopore_D2/MCH_final/final_curated_NR.fa
 
 ```
 
-::: {.panel-tabset}
-### D.tristis
-```{r}
-tePlotLib(list(lib2, lib1))
-```
-
-### D.merina
-```{r}
-tePlotLib(list(lib4, lib3))
-```
-
-:::
-
-## Blast results
-
 
 ```{r}
+#| output: false
 # Load the blast results comparing curated libraries
-blast1 <- LoadBlastComparison(
+
+blast_Dbir_dean_vs_marta <- LoadBlastComparison(
+  blast_out = "results/D.birchii_v1.0_00_GenBank_dean_vs_marta.blast.out",
+  blast_query_lib = lib_Dbir_dean,
+  blast_subject_lib = lib_Dbir_marta,
+  species = "D.birchii",
+  strain = "v1.0_00_GenBank",
+  comparison = "dean_vs_marta")
+   
+blast_Dmer_dean_vs_marta <- LoadBlastComparison(
+  blast_out = "results/D.merina_NA_dean_vs_marta.blast.out",
+  blast_query_lib = lib_Dmer_dean,
+  blast_subject_lib = lib_Dmer_marta,
+  species = "D.merina",
+  strain = "NA",
+  comparison = "dean_vs_marta")
+
+blast_Dsan_dean_vs_marta <- LoadBlastComparison(
+  blast_out = "results/D.santomea_STO_CAGO_1482_RefSeq_dean_vs_marta.blast.out",
+  blast_query_lib = lib_Dsan_dean,
+  blast_subject_lib = lib_Dsan_marta,
+  species = "D.santomea",
+  strain = "STO_CAGO_1482_RefSeq",
+  comparison = "dean_vs_marta")
+
+blast_Dtri_dean_vs_marta <- LoadBlastComparison(
   blast_out = "results/D.tristis_nanopore_D2_dean_vs_marta.blast.out",
-  blast_query_lib = lib2,
-  blast_subject_lib = lib1,
+  blast_query_lib = lib_Dtri_dean,
+  blast_subject_lib = lib_Dtri_marta,
   species = "D.tristis",
   strain = "nanopore_D2",
   comparison = "dean_vs_marta")
 
+# Bring them all together for overall
+blast_all <- bind_rows(
+  blast_Dbir_dean_vs_marta,
+  blast_Dmer_dean_vs_marta,
+  blast_Dsan_dean_vs_marta,
+  blast_Dtri_dean_vs_marta
+)
+
+
 ```
 
-
+## How do the libraries compare overall?
 
 ```{r}
+lib1 <- width(lib_Dtri_dean) %>%
+  data.frame(length = .)
+lib1$curator <- "dean"
 
-# Categorise the comparions
-blast1c <- blast1 %>%
-  mutate(
-    seq_match = case_when(
-      pident == 100 & evalue == 0 ~ "Perfect",
-      between(pident, 80, 99) ~ "Good",
-      pident == 50 ~ "Moderate",
-      pident == 30 ~ "Bad",
-      pident == 10 ~ "Really bad",
-      sseqid == NA ~ "Unique to query lib",
-      qseqid == NA ~ "Unique to subject lib"
-    ),
-    class_match = case_when(
-        q_subfamily == s_subfamily ~ "3",
-        q_family == s_family & q_subfamily != s_subfamily ~ "2",
-        q_class == s_class & q_family != s_family & q_subfamily != s_subfamily ~ "1",
-        qseqid == NA | sseqid == NA ~ "0"
-      )
-  )
+lib2 <- width(lib_Dtri_marta) %>%
+  data.frame(length = .)
+lib2$curator <- "marta"
 
-
+bind_rows(lib1, lib2) %>%
+    ggplot(aes(x = length)) +
+      geom_density(aes(fill = curator), alpha = 0.5, color = "black") +
+      labs(title = "Density Plot of DNA Sequence Lengths",
+           x = "Sequence Length (bp)",
+           y = "Density") +
+      theme_minimal()
 
 ```
+
+::: {.panel-tabset}
+
+### D.birchii
+```{r}
+tePlotLib(list(lib_Dbir_dean, lib_Dbir_marta))
+```
+
+### D.merina
+```{r}
+tePlotLib(list(lib_Dmer_dean, lib_Dmer_marta))
+```
+
+### D.santomea
+```{r}
+tePlotLib(list(lib_Dsan_dean, lib_Dsan_marta))
+```
+
+### D.tristis
+```{r}
+tePlotLib(list(lib_Dtri_dean, lib_Dtri_marta))
+```
+
+:::
+
+## How does agreement differ across TE classes?
+
+TE libraries compared by sequence similarity and classification agreement. seq_match (x axis) represents the BLASTn pident score, categorised as Perfect, Present 80, Present 70, and Missing (< 70, missing from either query or subject)
+
+::: {.panel-tabset}
+
+### D.birchii
+
+```{r}
+#| label: fig-tile-matches-Dbir
+#| fig-height: 16
+PlotBlastTileMatches(blast_Dbir_dean_vs_marta)
+```
+
+### D.merina
+
+```{r}
+#| label: fig-tile-matches-Dmer
+#| fig-height: 16
+PlotBlastTileMatches(blast_Dmer_dean_vs_marta)
+```
+
+### D.santomea
+
+```{r}
+#| label: fig-tile-matches-Dsan
+#| fig-height: 16
+PlotBlastTileMatches(blast_Dsan_dean_vs_marta)
+```
+
+### D.tristis
+
+```{r}
+#| label: fig-tile-matches-Dtri
+#| fig-height: 16
+PlotBlastTileMatches(blast_Dtri_dean_vs_marta)
+```
+
+:::
+
+::: {.panel-tabset}
+
+### D.birchii
+
+```{r}
+#| label: fig-violin-matches-Dbir
+#| fig-height: 16
+PlotBlastViolMatches(blast_Dbir_dean_vs_marta)
+```
+
+### D.merina
+
+```{r}
+#| label: fig-violin-matches-Dmer
+#| fig-height: 16
+PlotBlastViolMatches(blast_Dmer_dean_vs_marta)
+```
+
+### D.santomea
+
+```{r}
+#| label: fig-violin-matches-Dsan
+#| fig-height: 16
+PlotBlastViolMatches(blast_Dsan_dean_vs_marta)
+```
+
+### D.tristis
+
+```{r}
+#| label: fig-violin-matches-Dtri
+#| fig-height: 16
+PlotBlastViolMatches(blast_Dtri_dean_vs_marta)
+```
+
+:::

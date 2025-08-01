@@ -149,6 +149,89 @@ LoadBlastComparison <- function(
       s_subfamily = ".*"),
       cols_remove = FALSE
     )
+  
+  blast <- blast %>%
+  mutate(
+    seq_match = case_when(
+      between(pident, 95, 100) ~ "Perfect, 95-100",
+      between(pident, 80, 94.999) ~ "Present, 80",
+      between(pident, 70, 79.999) ~ "Present, 70",
+      (pident <= 69.999 | is.na(pident)) & is.na(sseqid) ~ "Missing from subject lib",
+      (pident <= 69.999 | is.na(pident)) & is.na(qseqid) ~ "Missing from query lib"
+    ),
+    class_match = case_when(
+        is.na(sseqid) ~ "Missing from subject lib",
+        is.na(qseqid) ~ "Missing from query lib",
+        q_subfamily == s_subfamily ~ "Class, Family, Subfamily",
+        q_family == s_family & q_subfamily != s_subfamily ~ "Class, Family",
+        q_class == s_class & q_family != s_family & q_subfamily != s_subfamily ~ "Class",
+        q_class != s_class & q_family != s_family & q_subfamily != s_subfamily ~ "None"
+      ),
+    class_match_score = case_when(
+        is.na(sseqid) ~ 0,
+        is.na(qseqid) ~ 0,
+        q_subfamily == s_subfamily ~ 4,
+        q_family == s_family & q_subfamily != s_subfamily ~ 3,
+        q_class == s_class & q_family != s_family & q_subfamily != s_subfamily ~ 2,
+        q_class != s_class & q_family != s_family & q_subfamily != s_subfamily ~ 1
+      )
+  )
+
+  blast <- blast %>%
+    mutate(
+      across(where(is.character), na_if, ""),
+      across(where(is.character), replace_na, "None")
+    )
+
+  blast <- blast %>%
+  mutate(
+    q_classification = paste(q_class, q_family, q_subfamily, sep = "/"),
+    s_classification = paste(s_class, s_family, s_subfamily, sep = "/")
+  )
 
   blast
+}
+
+PlotBlastTileMatches <- function(blast_input) {
+  blast_input %>%
+    group_by(
+      q_class, q_family, q_subfamily,
+      s_class, s_family, s_subfamily,
+      seq_match, class_match) %>%
+    summarise(
+      n = n()
+      ) %>%
+      mutate(
+      class_match = factor(class_match, levels = c("Missing from query lib", "Missing from subject lib", "None", "Class", "Class, Family", "Class, Family, Subfamily")),
+      seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, 70", "Present, 80", "Perfect, 95-100"))
+    ) %>%
+    ggplot(aes(seq_match, class_match, fill = n)) + 
+    geom_tile() +
+    facet_grid(
+      q_class + q_family + q_subfamily ~
+      s_class + s_family + s_subfamily,
+      scales = "free", space = "fixed"
+    ) +
+    theme_bw() +
+    theme(
+      strip.text.y = element_text(angle = 90),
+      strip.text.x = element_text(angle = 90),
+      axis.text.x = element_text(angle = 90)
+    ) +
+    scale_fill_viridis_c(option = "plasma")
+}
+
+PlotBlastViolMatches <- function(blast_input) {
+  blast_input %>%
+  mutate(pident = ifelse(is.na(pident), 0, pident)) %>%
+  ggplot(aes(q_classification, pident)) +
+  geom_violin() +
+  geom_point(aes(fill = factor(class_match_score)),
+    size = 3, stroke = 0.5, color = "black", shape = 21) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90)
+  ) +
+  facet_wrap(~ s_classification, scales = "free_x") +
+  scale_fill_viridis_d(option = "plasma")
 }

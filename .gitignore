@@ -50,3 +50,5 @@ rsconnect/
 
 # MCHelper
 data/
+
+/.quarto/
