@@ -1,5 +1,6 @@
 species,strain,marta,dean
-D.birchii,v1.0_00_GenBank,../../data/final_libraries/D.birchii/D.birchii.TE_library.fasta,data/MCH_output/D.birchii/v1.0_00_GenBank/MCH_final/final_curated_NR.fa
-D.merina,NA,../../data/final_libraries/D.merina/D.merina.TE_library.fasta,data/MCH_output/D.merina/NA/MCH_final/final_curated_NR.fa
-D.santomea,STO_CAGO_1482_RefSeq,../../data/final_libraries/D.santomea/D.santomea.TE_library.fasta,data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/MCH_final/final_curated_NR.fa
-D.tristis,nanopore_D2,../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta,data/MCH_output/D.tristis/nanopore_D2/MCH_final/final_curated_NR.fa
+D.birchii,v1.0_00_GenBank,../../data/final_libraries/D.birchii/D.birchii.TE_library.fasta,data/MCH_output/D.birchii/v1.0_00_GenBank/D.birchii_v1.0_00_GenBank_curated-TE-library.fa
+D.merina,NA,../../data/final_libraries/D.merina/D.merina.TE_library.fasta,data/MCH_output/D.merina/NA/D.merina_NA_curated-TE-library.fa
+D.planitibia,NA2,../../data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta,data/MCH_output/D.planitibia/NA2/D.planitibia_NA2_curated-TE-library.fa
+D.santomea,STO_CAGO_1482_RefSeq,../../data/final_libraries/D.santomea/D.santomea.TE_library.fasta,data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq_curated-TE-library.fa
+D.tristis,nanopore_D2,../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta,data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa

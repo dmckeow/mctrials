@@ -302,3 +302,32 @@ PlotBlastBarMatches <- function(blast_input) {
   plot_layout(guides = 'collect', ncol = 1) +
   plot_annotation(tag_levels = 'A')
 }
+
+
+summarize_libraries <- function(lib_list) {
+  summary_df <- data.frame()
+  
+  for (lib_name in names(lib_list)) {
+    lib <- lib_list[[lib_name]]
+    
+    length_val <- length(lib)
+    
+    # Optionally, parse species and person from name
+    parts <- strsplit(lib_name, "_")[[1]]
+    species <- parts[1]
+    what <- parts[2]
+    
+    summary_df <- rbind(
+      summary_df,
+      data.frame(
+        name = lib_name,
+        species = species,
+        what = what,
+        length = length_val,
+        stringsAsFactors = FALSE
+      )
+    )
+  }
+  
+  return(summary_df)
+}
