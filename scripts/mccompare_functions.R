@@ -162,16 +162,16 @@ LoadBlastComparison <- function(
     class_match = case_when(
         is.na(sseqid) ~ "Missing from subject lib",
         is.na(qseqid) ~ "Missing from query lib",
-        q_subfamily == s_subfamily ~ "Class, Family, Subfamily",
-        q_family == s_family & q_subfamily != s_subfamily ~ "Class, Family",
+        q_class == s_class & q_family == s_family & q_subfamily == s_subfamily ~ "Class, Family, Subfamily",
+        q_class == s_class & q_family == s_family & q_subfamily != s_subfamily ~ "Class, Family",
         q_class == s_class & q_family != s_family & q_subfamily != s_subfamily ~ "Class",
         q_class != s_class & q_family != s_family & q_subfamily != s_subfamily ~ "None"
       ),
     class_match_score = case_when(
         is.na(sseqid) ~ 0,
         is.na(qseqid) ~ 0,
-        q_subfamily == s_subfamily ~ 4,
-        q_family == s_family & q_subfamily != s_subfamily ~ 3,
+        q_class == s_class & q_family == s_family & q_subfamily == s_subfamily ~ 4,
+        q_class == s_class & q_family == s_family & q_subfamily != s_subfamily ~ 3,
         q_class == s_class & q_family != s_family & q_subfamily != s_subfamily ~ 2,
         q_class != s_class & q_family != s_family & q_subfamily != s_subfamily ~ 1
       )
@@ -193,32 +193,50 @@ LoadBlastComparison <- function(
 }
 
 PlotBlastTileMatches <- function(blast_input) {
-  blast_input %>%
+  df1 <- blast_input %>%
+    filter(
+      !seq_match == "Missing from query lib",
+      !seq_match == "Missing from subject lib"
+    ) %>%
     group_by(
-      q_class, q_family, q_subfamily,
-      s_class, s_family, s_subfamily,
+      q_classification,
+      s_classification,
       seq_match, class_match) %>%
     summarise(
       n = n()
       ) %>%
-      mutate(
+    ungroup() %>%
+    group_by(
+      q_classification) %>%
+    mutate(
+      percentage = n / sum(n) * 100
+    ) %>%
+    ungroup() %>%
+    mutate(
       class_match = factor(class_match, levels = c("Missing from query lib", "Missing from subject lib", "None", "Class", "Class, Family", "Class, Family, Subfamily")),
       seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, 70", "Present, 80", "Perfect, 95-100"))
-    ) %>%
-    ggplot(aes(seq_match, class_match, fill = n)) + 
-    geom_tile() +
-    facet_grid(
-      q_class + q_family + q_subfamily ~
-      s_class + s_family + s_subfamily,
-      scales = "free", space = "fixed"
-    ) +
-    theme_bw() +
-    theme(
-      strip.text.y = element_text(angle = 90),
-      strip.text.x = element_text(angle = 90),
-      axis.text.x = element_text(angle = 90)
-    ) +
-    scale_fill_viridis_c(option = "plasma")
+    )
+
+    p <- df1 %>%
+      ggplot(aes(x = q_classification, y = s_classification, fill = percentage)) +
+      geom_tile() +
+      facet_grid(
+        class_match ~
+        seq_match,
+        scales = "free", space = "free"
+      ) +
+      theme_bw() +
+      theme(
+        strip.text.y = element_text(angle = 0),
+        strip.text.x = element_text(angle = 90),
+        axis.text.x = element_text(angle = 90)
+      ) +
+      scale_fill_viridis_c(option = "plasma") +
+      labs(fill = "% of time assigned")
+
+      p
+  
+  #ggplotly(p, tooltip = "text")
 }
 
 PlotBlastViolMatches <- function(blast_input) {
@@ -234,4 +252,53 @@ PlotBlastViolMatches <- function(blast_input) {
   ) +
   facet_wrap(~ s_classification, scales = "free_x") +
   scale_fill_viridis_d(option = "plasma")
+}
+
+PlotBlastBarMatches <- function(blast_input) {
+  df <- blast_input %>%
+    group_by(
+        q_classification,
+        seq_match
+        ) %>%
+      summarize(
+        n = n()
+        ) %>%
+      mutate(
+        seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, 70", "Present, 80", "Perfect, 95-100"))
+      )
+  bp1 <- df %>%
+    ggplot(aes(fill=seq_match, y=n, x=reorder(q_classification, n))) + 
+    geom_bar(position="stack", stat="identity") +
+    theme_bw() +
+    scale_fill_manual(values = palette_seq_match) +
+    coord_flip()
+
+  bp2 <- df %>%
+    ggplot(aes(fill=seq_match, y=n, x=reorder(q_classification, n))) + 
+    geom_bar(position="fill", stat="identity") +
+    theme_bw() +
+    scale_fill_manual(values = palette_seq_match) +
+    coord_flip()
+  
+  # Now plot for the missing from query broken down by classification:
+  df2 <- blast_input %>%
+    filter(seq_match == "Missing from query lib") %>%
+    group_by(
+      s_classification,
+      seq_match
+    ) %>%
+    summarize(
+      n = n()
+    )
+
+  bp3 <- df2 %>%
+    ggplot(aes(fill=seq_match, y=n, x=reorder(s_classification, n))) + 
+    geom_bar(position="stack", stat="identity", show.legend = FALSE) +
+    theme_bw() +
+    scale_fill_manual(values = palette_seq_match) +
+    coord_flip()
+  
+  bp1 + bp2 + bp3 +
+  plot_layout(guides = 'collect', ncol = 1) +
+  plot_annotation(tag_levels = 'A')
 }

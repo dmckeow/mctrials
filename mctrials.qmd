@@ -55,6 +55,16 @@ for (i in 1:length(pkgs.list)){
 setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
 source("scripts/mccompare_functions.R")
 
+# Color schemes
+
+palette_seq_match <- c(
+  "Missing from query lib" = "black",                     # Clear and bold
+  "Missing from subject lib" = "grey50",                  # Distinct but neutral
+  "Present, 70" = RColorBrewer::brewer.pal(3, "Blues")[2],  # Medium blue
+  "Present, 80" = RColorBrewer::brewer.pal(3, "Blues")[3],  # Darker blue
+  "Perfect, 95-100" = RColorBrewer::brewer.pal(3, "Greens")[3]  # Bright green
+)
+
 # Load the TE classifications
 teClassification <- read.table("orozco_classification-2024_mchelper.csv", sep = ";", header = TRUE)
 teClassification <- teClassification %>%
@@ -168,25 +178,6 @@ blast_all <- bind_rows(
 
 ## How do the libraries compare overall?
 
-```{r}
-lib1 <- width(lib_Dtri_dean) %>%
-  data.frame(length = .)
-lib1$curator <- "dean"
-
-lib2 <- width(lib_Dtri_marta) %>%
-  data.frame(length = .)
-lib2$curator <- "marta"
-
-bind_rows(lib1, lib2) %>%
-    ggplot(aes(x = length)) +
-      geom_density(aes(fill = curator), alpha = 0.5, color = "black") +
-      labs(title = "Density Plot of DNA Sequence Lengths",
-           x = "Sequence Length (bp)",
-           y = "Density") +
-      theme_minimal()
-
-```
-
 ::: {.panel-tabset}
 
 ### D.birchii
@@ -211,17 +202,88 @@ tePlotLib(list(lib_Dtri_dean, lib_Dtri_marta))
 
 :::
 
-## How does agreement differ across TE classes?
-
-TE libraries compared by sequence similarity and classification agreement. seq_match (x axis) represents the BLASTn pident score, categorised as Perfect, Present 80, Present 70, and Missing (< 70, missing from either query or subject)
+## How often do the curators agree based on BLASTn sequence identity between their final curated libraries?
 
 ::: {.panel-tabset}
+
+### All genomes
+
+```{r}
+#| label: fig-bar-matches-all
+#| fig-height: 16
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_all)
+
+```
+
+### D.birchii
+
+```{r}
+#| label: fig-bar-matches-Dbir
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dbir_dean_vs_marta)
+
+```
+
+### D.merina
+
+```{r}
+#| label: fig-bar-matches-Dmer
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dmer_dean_vs_marta)
+
+```
+
+### D.santomea
+
+```{r}
+#| label: fig-bar-matches-Dsan
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dsan_dean_vs_marta)
+
+```
+
+### D.tristis
+
+```{r}
+#| label: fig-bar-matches-Dtri
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dtri_dean_vs_marta)
+
+```
+
+:::
+
+## How often do curators agree on TE classifications?
+
+::: {.panel-tabset}
+
+### All genomes
+
+```{r}
+#| label: fig-tile-matches-all
+#| fig-height: 16
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by comparing TE curator-assigned classifications between query (x axis, Dean) TE consensus and its best BLASTn hit in the subject (y axis, Marta) library. Facets of x axis show: BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library (not shown). Facets of y axis show: level of TE classification agreement e.g. Class, Family, Subfamily indicates that the two curators classified the TE exactly the same, whereas Class, Family means they differed on Subclass assignment - 'None' means each curator classified the TE as different Class, Family, and Subfamily!"
+
+PlotBlastTileMatches(blast_all)
+```
 
 ### D.birchii
 
 ```{r}
 #| label: fig-tile-matches-Dbir
 #| fig-height: 16
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by comparing TE curator-assigned classifications between query (x axis, Dean) TE consensus and its best BLASTn hit in the subject (y axis, Marta) library. Facets of x axis show: BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library (not shown). Facets of y axis show: level of TE classification agreement e.g. Class, Family, Subfamily indicates that the two curators classified the TE exactly the same, whereas Class, Family means they differed on Subclass assignment - 'None' means each curator classified the TE as different Class, Family, and Subfamily!"
+
 PlotBlastTileMatches(blast_Dbir_dean_vs_marta)
 ```
 
@@ -230,6 +292,8 @@ PlotBlastTileMatches(blast_Dbir_dean_vs_marta)
 ```{r}
 #| label: fig-tile-matches-Dmer
 #| fig-height: 16
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by comparing TE curator-assigned classifications between query (x axis, Dean) TE consensus and its best BLASTn hit in the subject (y axis, Marta) library. Facets of x axis show: BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library (not shown). Facets of y axis show: level of TE classification agreement e.g. Class, Family, Subfamily indicates that the two curators classified the TE exactly the same, whereas Class, Family means they differed on Subclass assignment - 'None' means each curator classified the TE as different Class, Family, and Subfamily!"
+
 PlotBlastTileMatches(blast_Dmer_dean_vs_marta)
 ```
 
@@ -238,6 +302,8 @@ PlotBlastTileMatches(blast_Dmer_dean_vs_marta)
 ```{r}
 #| label: fig-tile-matches-Dsan
 #| fig-height: 16
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by comparing TE curator-assigned classifications between query (x axis, Dean) TE consensus and its best BLASTn hit in the subject (y axis, Marta) library. Facets of x axis show: BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library (not shown). Facets of y axis show: level of TE classification agreement e.g. Class, Family, Subfamily indicates that the two curators classified the TE exactly the same, whereas Class, Family means they differed on Subclass assignment - 'None' means each curator classified the TE as different Class, Family, and Subfamily!"
+
 PlotBlastTileMatches(blast_Dsan_dean_vs_marta)
 ```
 
@@ -246,43 +312,32 @@ PlotBlastTileMatches(blast_Dsan_dean_vs_marta)
 ```{r}
 #| label: fig-tile-matches-Dtri
 #| fig-height: 16
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by comparing TE curator-assigned classifications between query (x axis, Dean) TE consensus and its best BLASTn hit in the subject (y axis, Marta) library. Facets of x axis show: BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library (not shown). Facets of y axis show: level of TE classification agreement e.g. Class, Family, Subfamily indicates that the two curators classified the TE exactly the same, whereas Class, Family means they differed on Subclass assignment - 'None' means each curator classified the TE as different Class, Family, and Subfamily!"
+
 PlotBlastTileMatches(blast_Dtri_dean_vs_marta)
 ```
 
 :::
 
-::: {.panel-tabset}
 
-### D.birchii
-
-```{r}
-#| label: fig-violin-matches-Dbir
-#| fig-height: 16
-PlotBlastViolMatches(blast_Dbir_dean_vs_marta)
-```
-
-### D.merina
+# TE size distribution
 
 ```{r}
-#| label: fig-violin-matches-Dmer
-#| fig-height: 16
-PlotBlastViolMatches(blast_Dmer_dean_vs_marta)
+lib1 <- width(lib_Dtri_dean) %>%
+  data.frame(length = .)
+lib1$curator <- "dean"
+
+lib2 <- width(lib_Dtri_marta) %>%
+  data.frame(length = .)
+lib2$curator <- "marta"
+
+bind_rows(lib1, lib2) %>%
+    ggplot(aes(x = length)) +
+      geom_density(aes(fill = curator), alpha = 0.5, color = "black") +
+      labs(title = "Density Plot of DNA Sequence Lengths",
+           x = "Sequence Length (bp)",
+           y = "Density") +
+      theme_minimal()
+
 ```
 
-### D.santomea
-
-```{r}
-#| label: fig-violin-matches-Dsan
-#| fig-height: 16
-PlotBlastViolMatches(blast_Dsan_dean_vs_marta)
-```
-
-### D.tristis
-
-```{r}
-#| label: fig-violin-matches-Dtri
-#| fig-height: 16
-PlotBlastViolMatches(blast_Dtri_dean_vs_marta)
-```
-
-:::

@@ -5,3 +5,4 @@ BiocParallel
 Biostrings
 tidyr
 seqinr
+patchwork
