@@ -1,0 +1,308 @@
+---
+title: "Manual curation trials - the lost final TEs"
+date: 2025-08-07
+execute:
+  warning: false
+format:
+  html:
+    self-contained: true
+    fig-height: 12
+    fig-width: 12
+    fig-format: png
+    fig-dpi: 300
+---
+
+
+# Comparing results of different TEammo curators
+When I did this I found that my curated final libraries where much smaller, ~ 50 %
+Though I had in error removed sequences during the final library review, this problem remains
+Now we will just focus on one - D.tristis to look at exactly why the two libs are different
+
+## Run BLASTs between curated libraries
+
+```{bash}
+#| eval: false
+
+dean="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
+marta="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
+species="D.tristis"
+strain="nanopore_D2"
+genome="/mnt/netapp2/Store_csgcyjgp/dean/data/RM2/D.tristis_nanopore_D2.fasta"
+RM2_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
+MCH_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
+
+mkdir -p results/mctrials2
+
+# Make the blastdbs - they are output in same folder as the fasta input
+conda activate MCHelper
+
+makeblastdb -in ${marta} -dbtype "nucl"
+makeblastdb -in ${dean} -dbtype "nucl"
+
+makeblastdb -in ${RM2_lib} -dbtype "nucl" # we can try blasting againts the original RM2 to retrieve TE names
+makeblastdb -in ${MCH_lib} -dbtype "nucl"
+
+# Run BLASTS - reciprocal in case useful later?
+blastn -query ${dean} -db ${marta} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_dean_vs_marta.blast.out
+blastn -query ${marta} -db ${dean} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_dean.blast.out
+
+# I noticed often 1 of my TEs has multiple high similarity hits to those in the db
+# so do a self BLAST
+
+blastn -query ${marta} -db ${marta} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_self.blast.out
+blastn -query ${dean} -db ${dean} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_dean_vs_self.blast.out
+
+# BLast martas against RM2 (clean) to retrieve original names because that metadata is lost 
+blastn -query ${marta} -db ${RM2_lib} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_RM2.blast.out
+blastn -query ${marta} -db ${MCH_lib} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_MCH.blast.out
+
+
+```
+
+
+## Visualisation
+```{r}
+#| output: false
+
+if(!require("BiocManager", character.only = T)) install.packages("BiocManager")
+pkgs.list <- readLines("r-requirements.txt")
+
+for (i in 1:length(pkgs.list)){
+  if(!require(pkgs.list[i], character.only = T)){
+    BiocManager::install(pkgs.list[i], Ncpus = ceiling(parallel::detectCores()/1.7))
+    require(pkgs.list[i], character.only = TRUE)
+  }else{require(pkgs.list[1],character.only = TRUE)}
+}
+```
+
+
+## Load and overall comparisons
+```{r}
+#| output: false
+setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
+source("scripts/mccompare_functions.R")
+
+# Color schemes
+
+palette_seq_match <- c(
+  "Missing from query lib" = "black",                     # Clear and bold
+  "Missing from subject lib" = "grey50",                  # Distinct but neutral
+  "Present, 70" = RColorBrewer::brewer.pal(1, "Greens")[1],  # Light green
+  "Present, 80" = RColorBrewer::brewer.pal(2, "Greens")[2],  # Medium green
+  "Perfect, 95-100" = RColorBrewer::brewer.pal(3, "Greens")[3]  # Bright green
+)
+
+# Load the TE classifications
+teClassification <- read.table("orozco_classification-2024_mchelper.csv", sep = ";", header = TRUE)
+teClassification <- teClassification %>%
+  mutate(AppName = paste(Class, Order, Superfamily, sep ="/") %>% sub("/$", "", .) %>% sub("/$", "", .))
+teClassification <- rbind(
+  teClassification
+  , c("", "Unclassified", "", "Unclassified")
+)
+
+# Load libraries to compare
+
+# Drosophila tristis
+lib_Dtri_marta <- teReadLib(
+  "../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.tristis", strain = "nanopore_D2")
+
+lib_Dtri_dean <- teReadLib(
+  "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.tristis", strain = "nanopore_D2")
+
+lib_Dtri_RM2 <- teReadLib(
+  "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa",
+  libIdentifier = "RM2",
+  species = "D.tristis", strain = "nanopore_D2")
+
+lib_Dtri_MCH <- teReadLib(
+  "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa",
+  libIdentifier = "MCH",
+  species = "D.tristis", strain = "nanopore_D2")
+
+# Load the names relation file from the TEammo output
+names_relate_file = "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/MCH_final/D.tristis_nanopore_D2_TE-names-relation.tsv"
+
+```
+
+# Load BLAST results
+
+
+```{r}
+blast_Dtri_dean_vs_marta <- LoadBlastComparison(
+  blast_out = "results/mctrials2/D.tristis_nanopore_D2_dean_vs_marta.blast.out",
+  blast_query_lib = lib_Dtri_dean,
+  blast_subject_lib = lib_Dtri_marta,
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  comparison = "dean_vs_marta")
+
+blast_Dtri_marta_vs_dean <- LoadBlastComparison(
+  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_dean.blast.out",
+  blast_query_lib = lib_Dtri_marta,
+  blast_subject_lib = lib_Dtri_dean,
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  comparison = "marta_vs_dean")
+
+# load the self blasts
+blast_Dtri_dean_vs_self <- LoadBlastComparison(
+  blast_out = "results/mctrials2/D.tristis_nanopore_D2_dean_vs_self.blast.out",
+  blast_query_lib = lib_Dtri_dean,
+  blast_subject_lib = lib_Dtri_dean,
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  comparison = "dean_vs_self")
+
+blast_Dtri_marta_vs_self <- LoadBlastComparison(
+  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_self.blast.out",
+  blast_query_lib = lib_Dtri_marta,
+  blast_subject_lib = lib_Dtri_marta,
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  comparison = "marta_vs_self")
+
+
+```
+
+# Redundancy suspicion
+Eyeballing the BLAST hits suggests that marta's final library is more redundant than mine...
+
+
+```{r}
+BlastSummaryStats <- function(blast, libIdentifier) {
+  summary_stats <- blast %>%
+    summarise(
+      n_query_seqs = n_distinct(qseqid),
+      n_hits_all = n(),
+      n_self_hits = sum(qseqid == sseqid),
+      n_nonself_hits_all = sum(qseqid != sseqid),
+      n_nonself_hits_perfect = sum(qseqid != sseqid & seq_match_score == 4),
+      n_nonself_hits_present80 = sum(qseqid != sseqid & seq_match_score == 3),
+      n_nonself_hits_present70 = sum(qseqid != sseqid & seq_match_score == 2)
+    ) %>%
+    mutate(
+      pct_self_hits = 100 * n_self_hits / n_hits_all,
+      pct_nonself_hits_all = 100 * n_nonself_hits_all / n_hits_all,
+      pct_nonself_hits_perfect = 100 * n_nonself_hits_perfect / n_hits_all,
+      pct_nonself_hits_present80 = 100 * n_nonself_hits_present80 / n_hits_all,
+      pct_nonself_hits_present70 = 100 * n_nonself_hits_present70 / n_hits_all
+    )
+
+    
+    summary_stats$lib <- libIdentifier
+    summary_stats
+}
+
+sum_blast_Dtri_dean_vs_self <- BlastSummaryStats(blast_Dtri_dean_vs_self, "Dtri_dean_vs_self")
+sum_blast_Dtri_marta_vs_self <- BlastSummaryStats(blast_Dtri_marta_vs_self, "Dtri_marta_vs_self")
+
+sum_blast_all <- bind_rows(
+    sum_blast_Dtri_dean_vs_self,
+    sum_blast_Dtri_marta_vs_self
+)
+
+gt(sum_blast_all)
+
+
+```
+
+
+```{r}
+#| label: fig-bar-matches-Dtri
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dtri_dean_vs_marta)
+```
+
+# what about reciprocal?
+Not useful really
+```{r}
+PlotBlastBarMatches(blast_Dtri_marta_vs_dean)
+
+```
+
+
+```{r}
+
+
+
+blast_Dtri_marta_vs_RM2 <- LoadBlastComparison(
+  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_RM2.blast.out",
+  blast_query_lib = lib_Dtri_marta,
+  blast_subject_lib = lib_Dtri_RM2,
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  comparison = "marta_vs_RM2")
+
+blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
+  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
+  blast_query_lib = lib_Dtri_marta,
+  blast_subject_lib = lib_Dtri_MCH,
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  comparison = "marta_vs_MCH")
+
+lib_Dtri_MCH_names <- as.data.frame(names(lib_Dtri_MCH))
+
+# Get the best hit which is the origninal name of the seq in the RM2 lib
+names_relate_marta <- blast_Dtri_marta_vs_MCH %>%
+  group_by(qseqid) %>%
+  slice_max(order_by = bitscore, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(qseqid, sseqid) %>%
+  filter(qseqid != "None")
+
+colnames(names_relate_marta) <- c("newIDs", "seqID")
+
+# Now get the names relate to convert the final names of MY lib into the orignial RM2 ones - newIDs to seqID
+names_relate <- data.table::fread(names_relate_file, sep = "\t") %>%
+  select(seqID, newIDs)
+
+# Now join in the original RM2 names - seqID
+blast_Dtri_dean_vs_marta_old <- blast_Dtri_dean_vs_marta %>%
+  left_join(names_relate, by = c("qseqid" = "newIDs"))
+
+# Now use RM2 blast to identify sseqid in dean vs marta
+blast_Dtri_dean_vs_marta_old <- blast_Dtri_dean_vs_marta_old %>%
+  left_join(names_relate_marta, by = c("sseqid" = "newIDs"))
+
+# Now reduce to only those I missed, with original name in the RM2 library
+missing_query <- blast_Dtri_dean_vs_marta_old %>%
+  filter(
+    seq_match == "Missing from query lib"
+  ) %>%
+  select(seqID.y)
+
+# OK - now what happened to these sequences?
+
+presence_df1 <- checkSeqFate(
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  MCH_output_dir = "../../mctrials_data2/MCH_output/",
+  query_ids = missing_query$seqID.y)
+
+summary_row1 <- colSums(presence_df1[, -1])
+summary_row1 <- c(seqID = "TOTAL_PRESENT", summary_row1)
+
+presence_df2 <- checkSeqFate(
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  MCH_output_dir = "../../mctrials_data2/MCH_output/",
+  query_ids = names(teLibs$teAutoCuratedLib))
+
+
+summary_row2 <- colSums(presence_df2[, -1])
+summary_row2 <- c(seqID = "TOTAL_PRESENT", summary_row2)
+
+```
+
+
+So most (60/90, my 49 final lib vs Marta's 149) of the seqs that were not in my lib ended up in teNon80Lib - "complete_non808080.fa"
+Another 2 ended up in teStandbyLib - presumably the 707070 bug meant they were not added
+A final 28 ended up in teIncompleteModelsLib - "incomplete_non808080.fa"

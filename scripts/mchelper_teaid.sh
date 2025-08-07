@@ -54,4 +54,7 @@ python3 /mnt/netapp2/Store_csgcyjgp/dean/mctrials/TEammo/mchelper-ats/MCHelper.p
 -l ../curated_sequences_NR.fa \
 -g $genome \
 -o . \
--t $THREADS > ../mchelper_manual.log
+-t $THREADS \
+-v Y > ../mchelper_manual.log
+
+# -v Y added after the library size discrepancy noticed

@@ -59,5 +59,7 @@ python3 /mnt/netapp2/Store_csgcyjgp/dean/mctrials/TEammo/mchelper-ats/MCHelper.p
 -b $BUSCO \
 -o . \
 -c 1 \
--t $THREADS > mchelper_automatic.log
+-t $THREADS \
+-v Y > mchelper_automatic.log
 
+# -v Y added after the library size discrepancy noticed

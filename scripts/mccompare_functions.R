@@ -32,6 +32,80 @@ teReadLib <- function(libPath, libIdentifier = NULL, species, strain){
   teLib #return the library
 }
 
+
+loadPlotLibs <- function(species, strain) {
+    teLibs <- list()
+    fileNames <- list()
+
+    # Define the files to load
+    fileNames$teOutDir <- paste("./data/MCH_output", species, strain, sep = "/")
+    fileNames$teManualOutDir <- paste0(fileNames$teOutDir,"/1_MI_MCH")
+    fileNames$te80OutDir <- gsub(fileNames$teNon80Lib, pattern = "complete_non808080.fa", replacement = "2_MI_MCH")
+    fileNames$te80TrimDir <- paste0(fileNames$te80OutDir, "/trimming")
+    fileNames$teIncompleteOutDir <- paste0(fileNames$teManualOutDir, "/3_MI_MCH")
+    fileNames$teIncompleteTrimDir <- paste0(fileNames$teIncompleteOutDir, "/trimming")
+    fileNames$teFinalMchDir <- paste0(fileNames$teOutDir, "/MCH_final")
+    fileNames$teFinalRenamed <- paste0(fileNames$teOutDir, "/", species, "_", strain, "_curated-TE-library.fa")
+
+    fileNames$teCleanLib <- paste0(fileNames$teOutDir, "/", strain, "-clean_families.fa")
+    fileNames$teAutoCuratedLib <- paste0(fileNames$teOutDir, "/curated_sequences_NR.fa")
+    fileNames$teIncompleteModelsLib <- paste0(fileNames$teManualOutDir, "/incomplete_models.fa")
+    fileNames$te80Lib <- paste0(fileNames$teManualOutDir, "/complete_808080.fa")
+    fileNames$teCompleteModelsLib <- paste0(fileNames$teManualOutDir, "/complete_models.fa")
+    fileNames$teNon80Lib <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "complete_non808080.fa")
+    fileNames$te80RecovLib <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "complete_808080_recovered.fa")
+    fileNames$teStandbyLib <- paste0(fileNames$te80OutDir, "/standby_sequences.fa")
+    fileNames$te70Lib <- gsub(pattern = "standby_sequences.fa", replacement = "standby_707070.fa", x = fileNames$teStandbyLib)
+    fileNames$teIncompleteNon80 <- gsub(fileNames$teIncompleteModelsLib, pattern = "incomplete_models.fa", replacement = "incomplete_non808080.fa")
+    fileNames$teIncompleteRecovLib <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "incomplete_808080_recovered.fa")
+    fileNames$te70FiltLib <- gsub(pattern = "standby_707070.fa", replacement = "standby_707070_filtered.fa",fileNames$te70Lib)
+    fileNames$teFinalNR <- paste0(fileNames$teFinalMchDir, "/final_curated_NR.fa")
+
+    fileNames$teNon80TmpLib <- paste0(fileNames$te80OutDir, "/tmp_non808080.fa")
+    fileNames$te80BlastLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "blast808080.log")
+    fileNames$te80AssignLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "assign_families.log")
+    fileNames$te80MchLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "mchelper_manual.log")
+    fileNames$te70InputDb <- gsub(pattern = "standby_sequences.fa", replacement = "allDatabases.clustered_merged.fa", x = fileNames$teStandbyLib)
+    fileNames$te70FilterLog <- gsub(fileNames$te70Lib, pattern = "standby_707070.fa", replacement = "707070_filter.log")
+    fileNames$teIncompleteNewfam <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "3_MI_MCH/incomplete_newfam.fa")
+    fileNames$teIncompleteNon80Tmp <- gsub(pattern = "incomplete_newfam.fa", replacement = "tmp_incomplete_non808080.fa", fileNames$teIncompleteNewfam)
+    
+    
+
+    # Then load them
+
+    teLibs$teCleanLib <- teReadLib(fileNames$teCleanLib, libIdentifier = "Clean lib", species = species, strain = strain)
+    teLibs$teAutoCuratedLib <- teReadLib(fileNames$teAutoCuratedLib, libIdentifier = "Curated sequences", species = species, strain = strain)
+    teLibs$teCompleteModelsLib <- teReadLib(fileNames$teCompleteModelsLib, libIdentifier = "Complete models", species = species, strain = strain)
+    teLibs$teIncompleteModelsLib <- teReadLib(fileNames$teIncompleteModelsLib, libIdentifier = "Incomplete models", species = species, strain = strain)
+    teLibs$te80Lib <- teReadLib(fileNames$te80Lib, libIdentifier = "808080 lib", species = species, strain = strain)
+    teLibs$teNon80Lib <- teReadLib(fileNames$teNon80Lib, libIdentifier = "Non 80-80-80 lib", species = species, strain = strain)
+    teLibs$te80RecovLib <- teReadLib(fileNames$te80RecovLib, libIdentifier = "Complete 808080 recovered", species = species, strain = strain)
+    teLibs$teStandbyLib <- teReadLib(fileNames$teStandbyLib, libIdentifier = "Stand by lib", species = species, strain = strain)
+    teLibs$te70Lib <- teReadLib(fileNames$te70Lib, libIdentifier = "707070 lib", species = species, strain = strain)
+    teLibs$teIncompleteRecovLib <- teReadLib(fileNames$teIncompleteRecovLib, libIdentifier = "Incomplete 808080 recovered", species = species, strain = strain)
+    teLibs$te70FiltLib <- teReadLib(fileNames$te70FiltLib, libIdentifier = "Standby 707070 filtered", species = species, strain = strain)
+    teLibs$teFinalNR <- teReadLib(fileNames$teFinalNR, libIdentifier = "Final curated TE library", species = species, strain = strain)
+
+  # Plot em
+    tePlotLibTotal(
+      list(
+        teLibs$teCleanLib,
+        teLibs$teAutoCuratedLib,
+        teLibs$teCompleteModelsLib,
+        teLibs$teIncompleteModelsLib,
+        #teLibs$te80Lib,
+        #teLibs$teNon80Lib,
+        teLibs$te80RecovLib,
+        #teLibs$teStandbyLib,
+        #teLibs$te70Lib,
+        teLibs$teIncompleteRecovLib,
+        teLibs$te70FiltLib,
+        teLibs$teFinalNR
+      )
+    )
+}
+
 tePlotLib <- function(teLibList, libType = "Please identify the library plot!!", libIdentifier = "Please identify the library"){
   if(class(teLibList) == "list"){
     # cat("This is executed")
@@ -57,7 +131,7 @@ tePlotLib <- function(teLibList, libType = "Please identify the library plot!!",
             ,plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
       labs(x = "", y = "Count", title = paste0(unique(inputDataComb$species), "--", unique(inputDataComb$strain))) +
       scale_fill_discrete(name = "Library type")
-    ggplotly(p) %>% layout(bargap = 0.3, legend = list(orientation = 'h', x = 0.1, y = 1))
+    ggplotly(p) %>% layout(bargap = 0.3)
   } else {
     teLib <- teLibs
     inputData <- data.frame(
@@ -70,6 +144,49 @@ tePlotLib <- function(teLibList, libType = "Please identify the library plot!!",
       geom_bar(aes(fill = element), position = "dodge", show.legend = FALSE) +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "bottom"
             ,plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+      labs(x = "", y = "Count", title = paste0(unique(inputData$species), "--", unique(inputData$strain)), subtitle = libType)
+    p2
+  }
+}
+
+tePlotLibTotal <- function(teLibList, libType = "Please identify the library plot!!", libIdentifier = "Please identify the library"){
+  if(class(teLibList) == "list"){
+    # cat("This is executed")
+    inputDataComb <- lapply(teLibList, function(teLib){
+      if(length(teLib) >= 1){
+        inputData <- data.frame(
+          element = teLib@ranges@metadata$repetitiveType
+          , width = teLib@ranges@width
+          , species = teLib@metadata$species, strain = teLib@metadata$strain
+          , libID = teLib@metadata$libID
+        )
+      }else{
+        cat("There are empty libraries", teLib, "\n")
+        inputData <- data.frame(element = character(), width = numeric(), species = character(), strain = character(), libID = character())
+      }
+      inputData  
+    }) %>% do.call(rbind, .)
+    # cat("Data for plotting is generated")
+    p <- inputDataComb %>%
+      ggplot(aes(x = fct_infreq(libID))) + theme_classic() +
+      geom_bar(aes(fill = libID), position = "dodge") +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+      labs(x = "", y = "Count", title = paste0(unique(inputDataComb$species), "--", unique(inputDataComb$strain))) +
+      scale_fill_discrete(name = "Library type")
+    ggplotly(p) %>% layout(bargap = 0.3)
+  } else {
+    teLib <- teLibs
+    inputData <- data.frame(
+      element = teLib@ranges@metadata$repetitiveType
+      , width = teLib@ranges@width
+      , species = teLib@metadata$species, strain = teLib@metadata$strain
+    )
+    p2 <- inputData %>%
+      ggplot(aes(x = element)) + theme_classic() +
+      geom_bar(aes(fill = element), position = "dodge", show.legend = FALSE) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
       labs(x = "", y = "Count", title = paste0(unique(inputData$species), "--", unique(inputData$strain)), subtitle = libType)
     p2
   }
@@ -159,6 +276,13 @@ LoadBlastComparison <- function(
       (pident <= 69.999 | is.na(pident)) & is.na(sseqid) ~ "Missing from subject lib",
       (pident <= 69.999 | is.na(pident)) & is.na(qseqid) ~ "Missing from query lib"
     ),
+    seq_match_score = case_when(
+      between(pident, 95, 100) ~ 4,
+      between(pident, 80, 94.999) ~ 3,
+      between(pident, 70, 79.999) ~ 2,
+      (pident <= 69.999 | is.na(pident)) & is.na(sseqid) ~ 1,
+      (pident <= 69.999 | is.na(pident)) & is.na(qseqid) ~ 0
+    ),
     class_match = case_when(
         is.na(sseqid) ~ "Missing from subject lib",
         is.na(qseqid) ~ "Missing from query lib",
@@ -194,14 +318,15 @@ LoadBlastComparison <- function(
 
 PlotBlastTileMatches <- function(blast_input) {
   df1 <- blast_input %>%
-    filter(
-      !seq_match == "Missing from query lib",
-      !seq_match == "Missing from subject lib"
-    ) %>%
+    #filter(
+      #!seq_match == "Missing from query lib",
+      #!seq_match == "Missing from subject lib"
+    #) %>%
     group_by(
       q_classification,
       s_classification,
-      seq_match, class_match) %>%
+      seq_match, class_match,
+      class_match_score, seq_match_score) %>%
     summarise(
       n = n()
       ) %>%
@@ -217,14 +342,22 @@ PlotBlastTileMatches <- function(blast_input) {
       seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, 70", "Present, 80", "Perfect, 95-100"))
     )
 
-    p <- df1 %>%
-      ggplot(aes(x = q_classification, y = s_classification, fill = percentage)) +
+    p1 <- df1 %>%
+      ggplot(
+        aes(
+          x = reorder(q_classification, class_match_score),
+          y = reorder(paste0(seq_match_score, s_classification), class_match_score),
+          fill = percentage,
+          text = paste(
+            "Query:", q_classification,
+            "\nSubject:", s_classification,
+            "\nSequence match:", seq_match,
+            "\nClassification match:", class_match,
+            "\n% of n that classification agreed:", percentage
+            )
+          )
+        ) +
       geom_tile() +
-      facet_grid(
-        class_match ~
-        seq_match,
-        scales = "free", space = "free"
-      ) +
       theme_bw() +
       theme(
         strip.text.y = element_text(angle = 0),
@@ -232,11 +365,9 @@ PlotBlastTileMatches <- function(blast_input) {
         axis.text.x = element_text(angle = 90)
       ) +
       scale_fill_viridis_c(option = "plasma") +
-      labs(fill = "% of time assigned")
+      labs(fill = "% of n assigned")
 
-      p
-  
-  #ggplotly(p, tooltip = "text")
+  ggplotly(p1, tooltip = "text")
 }
 
 PlotBlastViolMatches <- function(blast_input) {
@@ -330,4 +461,84 @@ summarize_libraries <- function(lib_list) {
   }
   
   return(summary_df)
+}
+
+
+
+checkSeqFate <- function(
+  species,
+  strain,
+  MCH_output_dir,
+  query_ids
+) {
+  teLibs <- list()
+    fileNames <- list()
+
+    # Define the files to load
+    fileNames$teOutDir <- paste(MCH_output_dir, species, strain, sep = "/")
+    fileNames$teManualOutDir <- paste0(fileNames$teOutDir,"/1_MI_MCH")
+    fileNames$te80OutDir <- paste0(fileNames$teOutDir,"/1_MI_MCH/2_MI_MCH")
+    fileNames$te80TrimDir <- paste0(fileNames$te80OutDir, "/trimming")
+    fileNames$teIncompleteOutDir <- paste0(fileNames$teManualOutDir, "/3_MI_MCH")
+    fileNames$teIncompleteTrimDir <- paste0(fileNames$teIncompleteOutDir, "/trimming")
+    fileNames$teFinalMchDir <- paste0(fileNames$teOutDir, "/MCH_final")
+    fileNames$teFinalRenamed <- paste0(fileNames$teOutDir, "/", species, "_", strain, "_curated-TE-library.fa")
+
+    fileNames$teCleanLib <- paste0(fileNames$teOutDir, "/", strain, "-clean_families.fa")
+    fileNames$teAutoCuratedLib <- paste0(fileNames$teOutDir, "/curated_sequences_NR.fa")
+    fileNames$teIncompleteModelsLib <- paste0(fileNames$teManualOutDir, "/incomplete_models.fa")
+    fileNames$te80Lib <- paste0(fileNames$teManualOutDir, "/complete_808080.fa")
+    fileNames$teCompleteModelsLib <- paste0(fileNames$teManualOutDir, "/complete_models.fa")
+    fileNames$teNon80Lib <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "complete_non808080.fa")
+    fileNames$te80RecovLib <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "complete_808080_recovered.fa")
+    fileNames$teStandbyLib <- paste0(fileNames$te80OutDir, "/standby_sequences.fa")
+    fileNames$te70Lib <- gsub(pattern = "standby_sequences.fa", replacement = "standby_707070.fa", x = fileNames$teStandbyLib)
+    fileNames$teIncompleteNon80 <- gsub(fileNames$teIncompleteModelsLib, pattern = "incomplete_models.fa", replacement = "incomplete_non808080.fa")
+    fileNames$teIncompleteRecovLib <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "incomplete_808080_recovered.fa")
+    fileNames$te70FiltLib <- gsub(pattern = "standby_707070.fa", replacement = "standby_707070_filtered.fa",fileNames$te70Lib)
+    fileNames$teFinalNR <- paste0(fileNames$teFinalMchDir, "/final_curated_NR.fa")
+
+    fileNames$teNon80TmpLib <- paste0(fileNames$te80OutDir, "/tmp_non808080.fa")
+    fileNames$te80BlastLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "blast808080.log")
+    fileNames$te80AssignLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "assign_families.log")
+    fileNames$te80MchLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "mchelper_manual.log")
+    fileNames$te70InputDb <- gsub(pattern = "standby_sequences.fa", replacement = "allDatabases.clustered_merged.fa", x = fileNames$teStandbyLib)
+    fileNames$te70FilterLog <- gsub(fileNames$te70Lib, pattern = "standby_707070.fa", replacement = "707070_filter.log")
+    fileNames$teIncompleteNewfam <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "3_MI_MCH/incomplete_newfam.fa")
+    fileNames$teIncompleteNon80Tmp <- gsub(pattern = "incomplete_newfam.fa", replacement = "tmp_incomplete_non808080.fa", fileNames$teIncompleteNewfam)
+    
+    
+
+    # Then load them
+
+    teLibs$teCleanLib <- teReadLib(fileNames$teCleanLib, libIdentifier = "Clean lib", species = species, strain = strain)
+    teLibs$teAutoCuratedLib <- teReadLib(fileNames$teAutoCuratedLib, libIdentifier = "Curated sequences", species = species, strain = strain)
+    teLibs$teCompleteModelsLib <- teReadLib(fileNames$teCompleteModelsLib, libIdentifier = "Complete models", species = species, strain = strain)
+    teLibs$teIncompleteModelsLib <- teReadLib(fileNames$teIncompleteModelsLib, libIdentifier = "Incomplete models", species = species, strain = strain)
+    teLibs$te80Lib <- teReadLib(fileNames$te80Lib, libIdentifier = "808080 lib", species = species, strain = strain)
+    teLibs$teNon80Lib <- teReadLib(fileNames$teNon80Lib, libIdentifier = "Non 80-80-80 lib", species = species, strain = strain)
+    teLibs$te80RecovLib <- teReadLib(fileNames$te80RecovLib, libIdentifier = "Complete 808080 recovered", species = species, strain = strain)
+    teLibs$teStandbyLib <- teReadLib(fileNames$teStandbyLib, libIdentifier = "Stand by lib", species = species, strain = strain)
+    teLibs$te70Lib <- teReadLib(fileNames$te70Lib, libIdentifier = "707070 lib", species = species, strain = strain)
+    teLibs$teIncompleteRecovLib <- teReadLib(fileNames$teIncompleteRecovLib, libIdentifier = "Incomplete 808080 recovered", species = species, strain = strain)
+    teLibs$te70FiltLib <- teReadLib(fileNames$te70FiltLib, libIdentifier = "Standby 707070 filtered", species = species, strain = strain)
+    teLibs$teFinalNR <- teReadLib(fileNames$teFinalNR, libIdentifier = "Final curated TE library", species = species, strain = strain)
+
+  
+  
+
+  # Check presence of each query in each library
+  query_ids_clean <- sub("#.*", "", query_ids)
+  results <- lapply(teLibs, function(lib) {
+    seq_ids <- names(lib)
+
+    seq_ids_clean <- sub("#.*", "", seq_ids)
+
+    query_ids_clean %in% seq_ids_clean
+  })
+
+  # Convert results into a data frame
+  presence_df <- as.data.frame(results)
+  presence_df <- cbind(seqID = query_ids_clean, presence_df)
+  presence_df
 }

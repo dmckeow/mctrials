@@ -60,8 +60,8 @@ source("scripts/mccompare_functions.R")
 palette_seq_match <- c(
   "Missing from query lib" = "black",                     # Clear and bold
   "Missing from subject lib" = "grey50",                  # Distinct but neutral
-  "Present, 70" = RColorBrewer::brewer.pal(3, "Blues")[2],  # Medium blue
-  "Present, 80" = RColorBrewer::brewer.pal(3, "Blues")[3],  # Darker blue
+  "Present, 70" = RColorBrewer::brewer.pal(1, "Greens")[1],  # Light green
+  "Present, 80" = RColorBrewer::brewer.pal(2, "Greens")[2],  # Medium green
   "Perfect, 95-100" = RColorBrewer::brewer.pal(3, "Greens")[3]  # Bright green
 )
 
@@ -100,6 +100,17 @@ lib_Dmer_dean <- teReadLib(
   libIdentifier = "Dean",
   species = "D.merina", strain = "NA")
 
+# Drosophila neocordata
+lib_Dneo_marta <- teReadLib(
+  "../../data/final_libraries/D.neocordata/D.neocordata.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.neocordata", strain = "nanopore_00")
+
+lib_Dneo_dean <- teReadLib(
+  "data/MCH_output/D.neocordata/nanopore_00/D.neocordata_nanopore_00_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.neocordata", strain = "nanopore_00")
+
 # Drosophila planitibia
 lib_Dpla_marta <- teReadLib(
   "../../data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta",
@@ -136,59 +147,6 @@ lib_Dtri_dean <- teReadLib(
   libIdentifier = "Dean",
   species = "D.tristis", strain = "nanopore_D2")
 
-# The raw libraries
-
-lib_Dbir_RM2_raw <- teReadLib(
-  "data/RM2_output/D.birchii/v1.0_00_GenBank/D.birchii_v1.0_00_GenBank-families.fa",
-  libIdentifier = "RM2_raw",
-  species = "D.birchii", strain = "v1.0_00_GenBank")
-
-lib_Dmer_RM2_raw <- teReadLib(
-  "data/RM2_output/D.merina/NA/D.merina-families.fa",
-  libIdentifier = "RM2_raw",
-  species = "D.merina", strain = "NA")
-
-lib_Dpla_RM2_raw <- teReadLib(
-  "data/RM2_output/D.planitibia/NA2/D.planitibia-families.fa",
-  libIdentifier = "RM2_raw",
-  species = "D.planitibia", strain = "NA2")
-
-lib_Dsan_RM2_raw <- teReadLib(
-  "data/RM2_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq-families.fa",
-  libIdentifier = "RM2_raw",
-  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
-
-lib_Dtri_RM2_raw <- teReadLib(
-  "data/RM2_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2-families.fa",
-  libIdentifier = "RM2_raw",
-  species = "D.tristis", strain = "nanopore_D2")
-
-# MCH auto libraries
-lib_Dbir_MCH_auto <- teReadLib(
-  "data/MCH_output/D.birchii/v1.0_00_GenBank/curated_sequences_NR.fa",
-  libIdentifier = "MCH_auto",
-  species = "D.birchii", strain = "v1.0_00_GenBank")
-
-lib_Dmer_MCH_auto <- teReadLib(
-  "data/MCH_output/D.merina/NA/curated_sequences_NR.fa",
-  libIdentifier = "MCH_auto",
-  species = "D.merina", strain = "NA")
-
-lib_Dpla_MCH_auto <- teReadLib(
-  "data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa",
-  libIdentifier = "MCH_auto",
-  species = "D.planitibia", strain = "NA2")
-
-lib_Dsan_MCH_auto <- teReadLib(
-  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/curated_sequences_NR.fa",
-  libIdentifier = "MCH_auto",
-  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
-
-lib_Dtri_MCH_auto <- teReadLib(
-  "data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa",
-  libIdentifier = "MCH_auto",
-  species = "D.tristis", strain = "nanopore_D2")
-
 ```
 
 
@@ -210,6 +168,14 @@ blast_Dmer_dean_vs_marta <- LoadBlastComparison(
   blast_subject_lib = lib_Dmer_marta,
   species = "D.merina",
   strain = "NA",
+  comparison = "dean_vs_marta")
+
+blast_Dneo_dean_vs_marta <- LoadBlastComparison(
+  blast_out = "results/D.neocordata_nanopore_00_dean_vs_marta.blast.out",
+  blast_query_lib = lib_Dneo_dean,
+  blast_subject_lib = lib_Dneo_marta,
+  species = "D.neocordata",
+  strain = "nanopore_00",
   comparison = "dean_vs_marta")
 
 blast_Dpla_dean_vs_marta <- LoadBlastComparison(
@@ -240,6 +206,7 @@ blast_Dtri_dean_vs_marta <- LoadBlastComparison(
 blast_all <- bind_rows(
   blast_Dbir_dean_vs_marta,
   blast_Dmer_dean_vs_marta,
+  blast_Dneo_dean_vs_marta,
   blast_Dpla_dean_vs_marta,
   blast_Dsan_dean_vs_marta,
   blast_Dtri_dean_vs_marta
@@ -252,63 +219,42 @@ blast_all <- bind_rows(
 
 ::: {.panel-tabset}
 
-### All genomes stats
+### D.birchii
 
 ```{r}
-
-lib_list <- list(
-  Dbir_RM2raw = lib_Dbir_RM2_raw,
-  Dmer_RM2raw = lib_Dmer_RM2_raw,
-  Dpla_RM2raw = lib_Dpla_RM2_raw,
-  Dsan_RM2raw = lib_Dsan_RM2_raw,
-  Dtri_RM2raw = lib_Dtri_RM2_raw
-)
-libs_RM2_raw_size <- summarize_libraries(lib_list)
-
-lib_list <- list(
-  Dbir_MCHauto = lib_Dbir_MCH_auto,
-  Dmer_MCHauto = lib_Dmer_MCH_auto,
-  Dpla_MCHauto = lib_Dpla_MCH_auto,
-  Dsan_MCHauto = lib_Dsan_MCH_auto,
-  Dtri_MCHauto = lib_Dtri_MCH_auto
-)
-libs_MCH_auto_size <- summarize_libraries(lib_list)
-
-lib_list <- list(
-  Dbir_dean  = lib_Dbir_dean,
-  Dmer_dean  = lib_Dmer_dean,
-  Dpla_dean  = lib_Dpla_dean,
-  Dsan_dean  = lib_Dsan_dean,
-  Dtri_dean  = lib_Dtri_dean
-)
-libs_final_curated_dean_size <- summarize_libraries(lib_list)
-
-lib_list <- list(
-  Dbir_marta = lib_Dbir_marta,
-  Dmer_marta = lib_Dmer_marta,
-  Dpla_marta = lib_Dpla_marta,
-  Dsan_marta = lib_Dsan_marta,
-  Dtri_marta = lib_Dtri_marta
-)
-libs_final_curated_marta_size <- summarize_libraries(lib_list)
-
-lib_sizes <- bind_rows(
-  libs_RM2_raw_size,
-  libs_MCH_auto_size,
-  libs_final_curated_dean_size,
-  libs_final_curated_marta_size
-)
-
-lib_sizes %>%
-  ggplot(aes(x = species, y = length)) +
-    theme_bw() +
-    geom_bar(aes(fill = what), stat = "identity", position = "dodge") +
-    scale_fill_discrete(name = "Library type") +
-    theme(axis.text.x = element_text(angle = 90))
-
-
-
+loadPlotLibs(species = "D.birchii", strain = "v1.0_00_GenBank")
 ```
+
+### D.merina
+```{r}
+loadPlotLibs(species = "D.merina", strain = "NA")
+```
+
+### D.neocordata
+```{r}
+loadPlotLibs(species = "D.neocordata", strain = "nanopore_00")
+```
+
+### D.planitibia
+```{r}
+loadPlotLibs(species = "D.planitibia", strain = "NA2")
+```
+
+### D.santomea
+```{r}
+loadPlotLibs(species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
+```
+
+### D.tristis
+```{r}
+loadPlotLibs(species = "D.tristis", strain = "nanopore_D2")
+```
+
+:::
+
+::: {.panel-tabset}
+
+### All genomes stats
 
 ### D.birchii
 ```{r}
@@ -323,6 +269,11 @@ tePlotLib(list(lib_Dmer_dean, lib_Dmer_marta))
 ### D.planitibia
 ```{r}
 tePlotLib(list(lib_Dpla_dean, lib_Dpla_marta))
+```
+
+### D.neocrodata
+```{r}
+tePlotLib(list(lib_Dneo_dean, lib_Dneo_marta))
 ```
 
 ### D.santomea
@@ -371,6 +322,17 @@ PlotBlastBarMatches(blast_Dbir_dean_vs_marta)
 #| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
 
 PlotBlastBarMatches(blast_Dmer_dean_vs_marta)
+
+```
+
+### D.neocordata
+
+```{r}
+#| label: fig-bar-matches-Dneo
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dneo_dean_vs_marta)
 
 ```
 
@@ -441,6 +403,16 @@ PlotBlastTileMatches(blast_Dbir_dean_vs_marta)
 #| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by comparing TE curator-assigned classifications between query (x axis, Dean) TE consensus and its best BLASTn hit in the subject (y axis, Marta) library. Facets of x axis show: BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library (not shown). Facets of y axis show: level of TE classification agreement e.g. Class, Family, Subfamily indicates that the two curators classified the TE exactly the same, whereas Class, Family means they differed on Subclass assignment - 'None' means each curator classified the TE as different Class, Family, and Subfamily!"
 
 PlotBlastTileMatches(blast_Dmer_dean_vs_marta)
+```
+
+### D.neocordata
+
+```{r}
+#| label: fig-tile-matches-Dneo
+#| fig-height: 16
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by comparing TE curator-assigned classifications between query (x axis, Dean) TE consensus and its best BLASTn hit in the subject (y axis, Marta) library. Facets of x axis show: BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library (not shown). Facets of y axis show: level of TE classification agreement e.g. Class, Family, Subfamily indicates that the two curators classified the TE exactly the same, whereas Class, Family means they differed on Subclass assignment - 'None' means each curator classified the TE as different Class, Family, and Subfamily!"
+
+PlotBlastTileMatches(blast_Dneo_dean_vs_marta)
 ```
 
 ### D.planitibia

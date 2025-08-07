@@ -6,3 +6,5 @@ Biostrings
 tidyr
 seqinr
 patchwork
+forcats
+gt
