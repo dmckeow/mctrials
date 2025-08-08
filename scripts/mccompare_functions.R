@@ -228,23 +228,32 @@ LoadBlastComparison <- function(
   blast_subject_lib,
   species,
   strain,
-  comparison) {
+  comparison,
+  reduce_hits = TRUE) {
 
   blast <- data.table::fread(blast_out, sep = "\t")
 
   colnames(blast) <- c(
     "qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"
   )
+  # Reduce to best hit per query
+  if (reduce_hits) {
+    blast <- blast %>%
+      group_by(qseqid) %>%
+      slice_max(order_by = bitscore, n = 1, with_ties = FALSE) %>%
+      ungroup() %>%
+      as.data.frame()
+  }
 
   # Idenitfy TEs with no hits in either direction
-  query_only <- data.frame(setdiff(names(blast_query_lib), blast$qseqid)) # Seqs in dean with no hit at all
+  query_only <- data.frame(setdiff(names(blast_query_lib), blast$qseqid)) # Seqs in query with no hit at all
   colnames(query_only) <- c("qseqid")
 
   subject_only <- data.frame(setdiff(names(blast_subject_lib), blast$sseqid)) # Seqs in marta with no hits from dean
   colnames(subject_only) <- c("sseqid")
 
-  blast <- rbind(blast, query_only, fill = TRUE)
-  blast <- rbind(blast, subject_only, fill = TRUE)
+  blast <- bind_rows(blast, query_only) %>%
+    bind_rows(subject_only)
 
   blast$species <- species
   blast$strain <- strain
@@ -429,7 +438,24 @@ PlotBlastBarMatches <- function(blast_input) {
     scale_fill_manual(values = palette_seq_match) +
     coord_flip()
   
-  bp1 + bp2 + bp3 +
+  df3 <- blast_input %>%
+    filter(seq_match == "Missing from subject lib") %>%
+    group_by(
+      q_classification,
+      seq_match
+    ) %>%
+    summarize(
+      n = n()
+    )
+
+  bp4 <- df3 %>%
+    ggplot(aes(fill=seq_match, y=n, x=reorder(q_classification, n))) + 
+    geom_bar(position="stack", stat="identity", show.legend = FALSE) +
+    theme_bw() +
+    scale_fill_manual(values = palette_seq_match) +
+    coord_flip()
+  
+  bp1 + bp2 + bp3 + bp4 +
   plot_layout(guides = 'collect', ncol = 1) +
   plot_annotation(tag_levels = 'A')
 }
@@ -486,6 +512,7 @@ checkSeqFate <- function(
 
     fileNames$teCleanLib <- paste0(fileNames$teOutDir, "/", strain, "-clean_families.fa")
     fileNames$teAutoCuratedLib <- paste0(fileNames$teOutDir, "/curated_sequences_NR.fa")
+    fileNames$teAutoCuratedLibRed <- paste0(fileNames$teOutDir, "/curated_sequences_R.fa")
     fileNames$teIncompleteModelsLib <- paste0(fileNames$teManualOutDir, "/incomplete_models.fa")
     fileNames$te80Lib <- paste0(fileNames$teManualOutDir, "/complete_808080.fa")
     fileNames$teCompleteModelsLib <- paste0(fileNames$teManualOutDir, "/complete_models.fa")
@@ -497,6 +524,7 @@ checkSeqFate <- function(
     fileNames$teIncompleteRecovLib <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "incomplete_808080_recovered.fa")
     fileNames$te70FiltLib <- gsub(pattern = "standby_707070.fa", replacement = "standby_707070_filtered.fa",fileNames$te70Lib)
     fileNames$teFinalNR <- paste0(fileNames$teFinalMchDir, "/final_curated_NR.fa")
+    fileNames$teFinalR <- paste0(fileNames$teFinalMchDir, "/final_curated_R.fa")
 
     fileNames$teNon80TmpLib <- paste0(fileNames$te80OutDir, "/tmp_non808080.fa")
     fileNames$te80BlastLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "blast808080.log")
@@ -506,13 +534,17 @@ checkSeqFate <- function(
     fileNames$te70FilterLog <- gsub(fileNames$te70Lib, pattern = "standby_707070.fa", replacement = "707070_filter.log")
     fileNames$teIncompleteNewfam <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "3_MI_MCH/incomplete_newfam.fa")
     fileNames$teIncompleteNon80Tmp <- gsub(pattern = "incomplete_newfam.fa", replacement = "tmp_incomplete_non808080.fa", fileNames$teIncompleteNewfam)
-    
-    
+
+    fileNames$teFirstMIDiscard <- paste0(fileNames$teManualOutDir, "/discarded_sequences.fa")
+    fileNames$teCompleteDiscard <- paste0(fileNames$teIncompleteOutDir, "/discarded_non808080.fa")
+    fileNames$teIncompleteDiscard <- paste0(fileNames$te80OutDir, "/discarded_non808080.fa")
+
 
     # Then load them
 
     teLibs$teCleanLib <- teReadLib(fileNames$teCleanLib, libIdentifier = "Clean lib", species = species, strain = strain)
     teLibs$teAutoCuratedLib <- teReadLib(fileNames$teAutoCuratedLib, libIdentifier = "Curated sequences", species = species, strain = strain)
+    teLibs$teAutoCuratedLibRed <- teReadLib(fileNames$teAutoCuratedLibRed, libIdentifier = "Curated sequences", species = species, strain = strain)
     teLibs$teCompleteModelsLib <- teReadLib(fileNames$teCompleteModelsLib, libIdentifier = "Complete models", species = species, strain = strain)
     teLibs$teIncompleteModelsLib <- teReadLib(fileNames$teIncompleteModelsLib, libIdentifier = "Incomplete models", species = species, strain = strain)
     teLibs$te80Lib <- teReadLib(fileNames$te80Lib, libIdentifier = "808080 lib", species = species, strain = strain)
@@ -523,9 +555,10 @@ checkSeqFate <- function(
     teLibs$teIncompleteRecovLib <- teReadLib(fileNames$teIncompleteRecovLib, libIdentifier = "Incomplete 808080 recovered", species = species, strain = strain)
     teLibs$te70FiltLib <- teReadLib(fileNames$te70FiltLib, libIdentifier = "Standby 707070 filtered", species = species, strain = strain)
     teLibs$teFinalNR <- teReadLib(fileNames$teFinalNR, libIdentifier = "Final curated TE library", species = species, strain = strain)
-
-  
-  
+    teLibs$teFinalR <- teReadLib(fileNames$teFinalR, libIdentifier = "Final curated TE library Red", species = species, strain = strain)
+    teLibs$teFirstMIDiscard <- teReadLib(fileNames$teFirstMIDiscard, libIdentifier = "First MI Discard", species = species, strain = strain)
+    teLibs$teCompleteDiscard <- teReadLib(fileNames$teCompleteDiscard, libIdentifier = "808080 Discard", species = species, strain = strain)
+    teLibs$teIncompleteDiscard <- teReadLib(fileNames$teIncompleteDiscard, libIdentifier = "Incomplete Discard", species = species, strain = strain)
 
   # Check presence of each query in each library
   query_ids_clean <- sub("#.*", "", query_ids)
@@ -540,5 +573,106 @@ checkSeqFate <- function(
   # Convert results into a data frame
   presence_df <- as.data.frame(results)
   presence_df <- cbind(seqID = query_ids_clean, presence_df)
+  presence_df
+}
+
+
+checkSeqFate2 <- function(
+  species,
+  strain,
+  MCH_output_dir,
+  query_ids  # list of character vectors OR data frame with alt names
+) {
+  teLibs <- list()
+  fileNames <- list()
+
+  # ---------- define all filenames ----------
+  # Define the files to load
+    fileNames$teOutDir <- paste(MCH_output_dir, species, strain, sep = "/")
+    fileNames$teManualOutDir <- paste0(fileNames$teOutDir,"/1_MI_MCH")
+    fileNames$te80OutDir <- paste0(fileNames$teOutDir,"/1_MI_MCH/2_MI_MCH")
+    fileNames$te80TrimDir <- paste0(fileNames$te80OutDir, "/trimming")
+    fileNames$teIncompleteOutDir <- paste0(fileNames$teManualOutDir, "/3_MI_MCH")
+    fileNames$teIncompleteTrimDir <- paste0(fileNames$teIncompleteOutDir, "/trimming")
+    fileNames$teFinalMchDir <- paste0(fileNames$teOutDir, "/MCH_final")
+    fileNames$teFinalRenamed <- paste0(fileNames$teOutDir, "/", species, "_", strain, "_curated-TE-library.fa")
+
+    fileNames$teCleanLib <- paste0(fileNames$teOutDir, "/", strain, "-clean_families.fa")
+    fileNames$teAutoCuratedLib <- paste0(fileNames$teOutDir, "/curated_sequences_NR.fa")
+    fileNames$teAutoCuratedLibRed <- paste0(fileNames$teOutDir, "/curated_sequences_R.fa")
+    fileNames$teIncompleteModelsLib <- paste0(fileNames$teManualOutDir, "/incomplete_models.fa")
+    fileNames$te80Lib <- paste0(fileNames$teManualOutDir, "/complete_808080.fa")
+    fileNames$teCompleteModelsLib <- paste0(fileNames$teManualOutDir, "/complete_models.fa")
+    fileNames$teNon80Lib <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "complete_non808080.fa")
+    fileNames$te80RecovLib <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "complete_808080_recovered.fa")
+    fileNames$teStandbyLib <- paste0(fileNames$te80OutDir, "/standby_sequences.fa")
+    fileNames$te70Lib <- gsub(pattern = "standby_sequences.fa", replacement = "standby_707070.fa", x = fileNames$teStandbyLib)
+    fileNames$teIncompleteNon80 <- gsub(fileNames$teIncompleteModelsLib, pattern = "incomplete_models.fa", replacement = "incomplete_non808080.fa")
+    fileNames$teIncompleteRecovLib <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "incomplete_808080_recovered.fa")
+    fileNames$te70FiltLib <- gsub(pattern = "standby_707070.fa", replacement = "standby_707070_filtered.fa",fileNames$te70Lib)
+    fileNames$teFinalNR <- paste0(fileNames$teFinalMchDir, "/final_curated_NR.fa")
+    fileNames$teFinalR <- paste0(fileNames$teFinalMchDir, "/final_curated_R.fa")
+
+    fileNames$teNon80TmpLib <- paste0(fileNames$te80OutDir, "/tmp_non808080.fa")
+    fileNames$te80BlastLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "blast808080.log")
+    fileNames$te80AssignLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "assign_families.log")
+    fileNames$te80MchLog <- gsub(fileNames$teCompleteModelsLib, pattern = "complete_models.fa", replacement = "mchelper_manual.log")
+    fileNames$te70InputDb <- gsub(pattern = "standby_sequences.fa", replacement = "allDatabases.clustered_merged.fa", x = fileNames$teStandbyLib)
+    fileNames$te70FilterLog <- gsub(fileNames$te70Lib, pattern = "standby_707070.fa", replacement = "707070_filter.log")
+    fileNames$teIncompleteNewfam <- gsub(x = fileNames$teIncompleteNon80, pattern = "incomplete_non808080.fa", replacement = "3_MI_MCH/incomplete_newfam.fa")
+    fileNames$teIncompleteNon80Tmp <- gsub(pattern = "incomplete_newfam.fa", replacement = "tmp_incomplete_non808080.fa", fileNames$teIncompleteNewfam)
+
+    fileNames$teFirstMIDiscard <- paste0(fileNames$teManualOutDir, "/discarded_sequences.fa")
+    fileNames$teCompleteDiscard <- paste0(fileNames$teIncompleteOutDir, "/discarded_non808080.fa")
+    fileNames$teIncompleteDiscard <- paste0(fileNames$te80OutDir, "/discarded_non808080.fa")
+
+
+    # Then load them
+
+    teLibs$teCleanLib <- teReadLib(fileNames$teCleanLib, libIdentifier = "Clean lib", species = species, strain = strain)
+    teLibs$teAutoCuratedLib <- teReadLib(fileNames$teAutoCuratedLib, libIdentifier = "Curated sequences", species = species, strain = strain)
+    teLibs$teAutoCuratedLibRed <- teReadLib(fileNames$teAutoCuratedLibRed, libIdentifier = "Curated sequences", species = species, strain = strain)
+    teLibs$teCompleteModelsLib <- teReadLib(fileNames$teCompleteModelsLib, libIdentifier = "Complete models", species = species, strain = strain)
+    teLibs$teIncompleteModelsLib <- teReadLib(fileNames$teIncompleteModelsLib, libIdentifier = "Incomplete models", species = species, strain = strain)
+    teLibs$te80Lib <- teReadLib(fileNames$te80Lib, libIdentifier = "808080 lib", species = species, strain = strain)
+    teLibs$teNon80Lib <- teReadLib(fileNames$teNon80Lib, libIdentifier = "Non 80-80-80 lib", species = species, strain = strain)
+    teLibs$te80RecovLib <- teReadLib(fileNames$te80RecovLib, libIdentifier = "Complete 808080 recovered", species = species, strain = strain)
+    teLibs$teStandbyLib <- teReadLib(fileNames$teStandbyLib, libIdentifier = "Stand by lib", species = species, strain = strain)
+    teLibs$te70Lib <- teReadLib(fileNames$te70Lib, libIdentifier = "707070 lib", species = species, strain = strain)
+    teLibs$teIncompleteRecovLib <- teReadLib(fileNames$teIncompleteRecovLib, libIdentifier = "Incomplete 808080 recovered", species = species, strain = strain)
+    teLibs$te70FiltLib <- teReadLib(fileNames$te70FiltLib, libIdentifier = "Standby 707070 filtered", species = species, strain = strain)
+    teLibs$teFinalNR <- teReadLib(fileNames$teFinalNR, libIdentifier = "Final curated TE library", species = species, strain = strain)
+    teLibs$teFinalR <- teReadLib(fileNames$teFinalR, libIdentifier = "Final curated TE library Red", species = species, strain = strain)
+    teLibs$teFirstMIDiscard <- teReadLib(fileNames$teFirstMIDiscard, libIdentifier = "First MI Discard", species = species, strain = strain)
+    teLibs$teCompleteDiscard <- teReadLib(fileNames$teCompleteDiscard, libIdentifier = "808080 Discard", species = species, strain = strain)
+    teLibs$teIncompleteDiscard <- teReadLib(fileNames$teIncompleteDiscard, libIdentifier = "Incomplete Discard", species = species, strain = strain)
+
+  # ---------- normalise query IDs ----------
+  clean_names <- function(x) sub("#.*", "", x)
+
+  # If data frame, turn to list of character vectors
+  if (is.data.frame(query_ids)) {
+    query_list <- split(query_ids, seq_len(nrow(query_ids)))
+    query_list <- lapply(query_list, function(row) clean_names(unlist(row)))
+  } else if (is.list(query_ids)) {
+    query_list <- lapply(query_ids, clean_names)
+  } else {
+    query_list <- as.list(clean_names(query_ids))
+  }
+
+  # ---------- check presence ----------
+  results <- lapply(teLibs, function(lib) {
+    lib_ids_clean <- clean_names(names(lib))
+    sapply(query_list, function(possible_names) {
+      any(possible_names %in% lib_ids_clean)
+    })
+  })
+
+  # ---------- make data frame ----------
+  presence_df <- as.data.frame(results)
+  presence_df <- cbind(
+  seqID = sapply(query_list, function(x) paste(x, collapse = "|")), 
+  presence_df
+)
   presence_df
 }

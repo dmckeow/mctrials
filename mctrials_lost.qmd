@@ -156,7 +156,8 @@ blast_Dtri_dean_vs_self <- LoadBlastComparison(
   blast_subject_lib = lib_Dtri_dean,
   species = "D.tristis",
   strain = "nanopore_D2",
-  comparison = "dean_vs_self")
+  comparison = "dean_vs_self",
+  reduce_hits = FALSE)
 
 blast_Dtri_marta_vs_self <- LoadBlastComparison(
   blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_self.blast.out",
@@ -164,7 +165,8 @@ blast_Dtri_marta_vs_self <- LoadBlastComparison(
   blast_subject_lib = lib_Dtri_marta,
   species = "D.tristis",
   strain = "nanopore_D2",
-  comparison = "marta_vs_self")
+  comparison = "marta_vs_self",
+  reduce_hits = FALSE)
 
 
 ```
@@ -174,6 +176,7 @@ Eyeballing the BLAST hits suggests that marta's final library is more redundant 
 
 
 ```{r}
+# Only works with non best hit blast
 BlastSummaryStats <- function(blast, libIdentifier) {
   summary_stats <- blast %>%
     summarise(
@@ -230,15 +233,7 @@ PlotBlastBarMatches(blast_Dtri_marta_vs_dean)
 
 ```{r}
 
-
-
-blast_Dtri_marta_vs_RM2 <- LoadBlastComparison(
-  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_RM2.blast.out",
-  blast_query_lib = lib_Dtri_marta,
-  blast_subject_lib = lib_Dtri_RM2,
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  comparison = "marta_vs_RM2")
+source("scripts/mccompare_functions.R")
 
 blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
   blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
@@ -250,59 +245,148 @@ blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
 
 lib_Dtri_MCH_names <- as.data.frame(names(lib_Dtri_MCH))
 
-# Get the best hit which is the origninal name of the seq in the RM2 lib
-names_relate_marta <- blast_Dtri_marta_vs_MCH %>%
+# Get the best hit which is the origninal name of the seq in the MCH lib
+blast_Dtri_marta_vs_MCH <- blast_Dtri_marta_vs_MCH %>%
   group_by(qseqid) %>%
   slice_max(order_by = bitscore, n = 1, with_ties = FALSE) %>%
-  ungroup() %>%
+  ungroup()
+
+names_relate_marta <- blast_Dtri_marta_vs_MCH %>%
   select(qseqid, sseqid) %>%
   filter(qseqid != "None")
 
 colnames(names_relate_marta) <- c("newIDs", "seqID")
 
-# Now get the names relate to convert the final names of MY lib into the orignial RM2 ones - newIDs to seqID
+# Now get the names relate to convert the final names of MY lib into the orignial MCH ones - newIDs to seqID
 names_relate <- data.table::fread(names_relate_file, sep = "\t") %>%
   select(seqID, newIDs)
 
-# Now join in the original RM2 names - seqID
-blast_Dtri_dean_vs_marta_old <- blast_Dtri_dean_vs_marta %>%
-  left_join(names_relate, by = c("qseqid" = "newIDs"))
+# Now join in the original MCH names - seqID
+blast_with_old_names <- blast_Dtri_marta_vs_dean %>%
+  left_join(names_relate, by = c("sseqid" = "newIDs"))
 
-# Now use RM2 blast to identify sseqid in dean vs marta
-blast_Dtri_dean_vs_marta_old <- blast_Dtri_dean_vs_marta_old %>%
-  left_join(names_relate_marta, by = c("sseqid" = "newIDs"))
+# Now use MCH blast to identify sseqid in dean vs marta
+blast_with_old_names <- blast_with_old_names %>%
+  left_join(names_relate_marta, by = c("qseqid" = "newIDs"))
 
-# Now reduce to only those I missed, with original name in the RM2 library
-missing_query <- blast_Dtri_dean_vs_marta_old %>%
+blast_with_old_names <-   blast_with_old_names %>%
+  dplyr::rename(
+    name_MCH = seqID.y,
+    name_TEammo = seqID.x
+  )
+
+# Now reduce to only those I missed, with original name in the MCH library
+missing_query <- blast_with_old_names %>%
   filter(
-    seq_match == "Missing from query lib"
+    seq_match == "Missing from subject lib"
   ) %>%
-  select(seqID.y)
+  select(name_MCH, name_TEammo)
+
+not_missing_query <- blast_with_old_names %>%
+  filter(
+    seq_match != "Missing from query lib"
+  ) %>%
+  select(name_MCH, name_TEammo)
 
 # OK - now what happened to these sequences?
 
-presence_df1 <- checkSeqFate(
+presence_df1 <- checkSeqFate2(
   species = "D.tristis",
   strain = "nanopore_D2",
   MCH_output_dir = "../../mctrials_data2/MCH_output/",
-  query_ids = missing_query$seqID.y)
+  query_ids = missing_query)
 
 summary_row1 <- colSums(presence_df1[, -1])
 summary_row1 <- c(seqID = "TOTAL_PRESENT", summary_row1)
 
-presence_df2 <- checkSeqFate(
+
+query_missing_fate2 <- data.frame(
+  category = names(summary_row1),
+  value = as.numeric(summary_row1)
+)
+query_missing_fate2
+
+
+# Repeat for non-missing seqs
+
+presence_df1 <- checkSeqFate2(
   species = "D.tristis",
   strain = "nanopore_D2",
   MCH_output_dir = "../../mctrials_data2/MCH_output/",
-  query_ids = names(teLibs$teAutoCuratedLib))
+  query_ids = as.data.frame(not_missing_query))
+
+summary_row1 <- colSums(presence_df1[, -1])
+summary_row1 <- c(seqID = "TOTAL_PRESENT", summary_row1)
 
 
-summary_row2 <- colSums(presence_df2[, -1])
-summary_row2 <- c(seqID = "TOTAL_PRESENT", summary_row2)
+query_not_missing_fate2 <- data.frame(
+  category = names(summary_row1),
+  value = as.numeric(summary_row1)
+)
+query_not_missing_fate2
+
+write.table(missing_query$name_MCH, "missing_query.csv", 
+            sep = "\t",       # or " " for space-separated
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
+
+# rnd-5_family-1661_s_1_unconfirmed
+```
+
+# The fate of the missing TEs
+* My final lib was 49 vs Marta's 139 for this genome - of these 90 lost TEs:
+  * 60 ended up in teNon80Lib - "complete_non808080.fa"
+  * 2 ended up in teStandbyLib - presumably the 707070 bug meant they were not added
+  * 28 ended up in teIncompleteModelsLib - "incomplete_non808080.fa"
+
+## All the final lib seqs in Marta library are in the MCHelper library
+All 139 have a blast hit 95-100% hit vs the MCHelper library
+```{r}
+length(lib_Dtri_marta)
+length(unique(blast_Dtri_marta_vs_MCH$qseqid))
+
+as.data.frame(table(blast_Dtri_marta_vs_MCH$seq_match))
+```
+
+## Did I discard them manually?
+* 5 discarded in the first MI - they are in the discarded_sequences.fa so this was my manual inspection
+* 28 discarded in the 808080 step
+* 9 discarded in the Incomplete module
+* 42 in total were discarded, leaving 48 removed somewhere else?
+
+## Total seqs discarded?
+* 57 in 808080
+* 170 in incomplete
+* 67 in first MI
+
+
+# Where are the missing TEs?
+
+
+```{bash}
+
+conda activate bioinf
+mkdir results/mctrials2/lost
+find ../../mctrials_data2/MCH_output/D.tristis/nanopore_D2 -name "*.fa" -o -name "*.fasta" > all_fasta
+
+for f in $(cat all_fasta); do
+  seqkit grep --threads 4 -n -f missing_query.csv $f > results/mctrials/lost/${}
+
+
+while IFS= read -r f; do
+  count=$(seqkit grep -n -f missing_query.csv "$f" | grep -c "^>")
+  echo "$f: $count matches"
+done < all_fasta > lost_queries
 
 ```
 
+## Curation of the lost seqs
 
-So most (60/90, my 49 final lib vs Marta's 149) of the seqs that were not in my lib ended up in teNon80Lib - "complete_non808080.fa"
-Another 2 ended up in teStandbyLib - presumably the 707070 bug meant they were not added
-A final 28 ended up in teIncompleteModelsLib - "incomplete_non808080.fa"
+
+
+```{bash}
+MCH_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
+
+seqkit grep --threads 4 -n -f missing_query.csv $MCH_lib > results/mctrials2/lost/curated_sequences_NR.fa
+```
