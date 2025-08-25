@@ -22,14 +22,16 @@ Now we will just focus on one - D.tristis to look at exactly why the two libs ar
 
 ```{bash}
 #| eval: false
+#| output: false
 
-dean="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
+
+dean="data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
 marta="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
 species="D.tristis"
 strain="nanopore_D2"
 genome="/mnt/netapp2/Store_csgcyjgp/dean/data/RM2/D.tristis_nanopore_D2.fasta"
-RM2_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
-MCH_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
+RM2_lib="data/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
+MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
 
 mkdir -p results/mctrials2
 
@@ -43,55 +45,61 @@ makeblastdb -in ${RM2_lib} -dbtype "nucl" # we can try blasting againts the orig
 makeblastdb -in ${MCH_lib} -dbtype "nucl"
 
 # Run BLASTS - reciprocal in case useful later?
-blastn -query ${dean} -db ${marta} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_dean_vs_marta.blast.out
-blastn -query ${marta} -db ${dean} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_dean.blast.out
+blastn -query ${dean} -db ${marta} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_dean_vs_marta.blast.out
+blastn -query ${marta} -db ${dean} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_dean.blast.out
 
 # I noticed often 1 of my TEs has multiple high similarity hits to those in the db
 # so do a self BLAST
 
-blastn -query ${marta} -db ${marta} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_self.blast.out
-blastn -query ${dean} -db ${dean} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_dean_vs_self.blast.out
+blastn -query ${marta} -db ${marta} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_self.blast.out
+blastn -query ${dean} -db ${dean} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_dean_vs_self.blast.out
 
 # BLast martas against RM2 (clean) to retrieve original names because that metadata is lost 
-blastn -query ${marta} -db ${RM2_lib} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_RM2.blast.out
-blastn -query ${marta} -db ${MCH_lib} -outfmt 6 -max_hsps 1 -out results/mctrials2/${species}_${strain}_marta_vs_MCH.blast.out
+blastn -query ${marta} -db ${RM2_lib} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_RM2.blast.out
+blastn -query ${marta} -db ${MCH_lib} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_MCH.blast.out
 
 
 ```
 
 ```{bash}
-lib1="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
-marta="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
+conda activate bioinf
+
+lib1="data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
+lib1_name="dean"
+lib2="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
+lib2_name="marta"
 species="D.tristis"
 strain="nanopore_D2"
 genome="/mnt/netapp2/Store_csgcyjgp/dean/data/RM2/D.tristis_nanopore_D2.fasta"
-RM2_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
-MCH_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
-scripts/libcompare.sh 
+RM2_lib="data/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
+MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
+scripts/libcompare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $genome $RM2_lib $MCH_lib
 ```
 
-
-## Visualisation
-```{r}
-#| output: false
-
-if(!require("BiocManager", character.only = T)) install.packages("BiocManager")
-pkgs.list <- readLines("r-requirements.txt")
-
-for (i in 1:length(pkgs.list)){
-  if(!require(pkgs.list[i], character.only = T)){
-    BiocManager::install(pkgs.list[i], Ncpus = ceiling(parallel::detectCores()/1.7))
-    require(pkgs.list[i], character.only = TRUE)
-  }else{require(pkgs.list[1],character.only = TRUE)}
-}
-```
 
 
 ## Load and overall comparisons
+
 ```{r}
 #| output: false
-setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
+#setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
 source("scripts/mccompare_functions.R")
+
+
+library(plotly)
+library(dplyr)
+library(ggplot2)
+#library(BiocParallel)
+library(Biostrings)
+library(tidyr)
+library(seqinr)
+library(patchwork)
+library(forcats)
+library(gt)
+```
+
+```{r}
+#| output: false
 
 # Color schemes
 
@@ -121,22 +129,22 @@ lib_Dtri_marta <- teReadLib(
   species = "D.tristis", strain = "nanopore_D2")
 
 lib_Dtri_dean <- teReadLib(
-  "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa",
+  "data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa",
   libIdentifier = "Dean",
   species = "D.tristis", strain = "nanopore_D2")
 
 lib_Dtri_RM2 <- teReadLib(
-  "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa",
+  "data/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa",
   libIdentifier = "RM2",
   species = "D.tristis", strain = "nanopore_D2")
 
 lib_Dtri_MCH <- teReadLib(
-  "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa",
+  "data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa",
   libIdentifier = "MCH",
   species = "D.tristis", strain = "nanopore_D2")
 
 # Load the names relation file from the TEammo output
-names_relate_file = "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/MCH_final/D.tristis_nanopore_D2_TE-names-relation.tsv"
+names_relate_file = "data/MCH_output/D.tristis/nanopore_D2/MCH_final/D.tristis_nanopore_D2_TE-names-relation.tsv"
 
 ```
 
@@ -145,7 +153,7 @@ names_relate_file = "../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/MCH_f
 
 ```{r}
 blast_Dtri_dean_vs_marta <- LoadBlastComparison(
-  blast_out = "results/mctrials2/D.tristis_nanopore_D2_dean_vs_marta.blast.out",
+  blast_out = "results/lib_compare/D.tristis_nanopore_D2_dean_vs_marta.blast.out",
   blast_query_lib = lib_Dtri_dean,
   blast_subject_lib = lib_Dtri_marta,
   species = "D.tristis",
@@ -153,7 +161,7 @@ blast_Dtri_dean_vs_marta <- LoadBlastComparison(
   comparison = "dean_vs_marta")
 
 blast_Dtri_marta_vs_dean <- LoadBlastComparison(
-  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_dean.blast.out",
+  blast_out = "results/lib_compare/D.tristis_nanopore_D2_marta_vs_dean.blast.out",
   blast_query_lib = lib_Dtri_marta,
   blast_subject_lib = lib_Dtri_dean,
   species = "D.tristis",
@@ -162,7 +170,7 @@ blast_Dtri_marta_vs_dean <- LoadBlastComparison(
 
 # load the self blasts
 blast_Dtri_dean_vs_self <- LoadBlastComparison(
-  blast_out = "results/mctrials2/D.tristis_nanopore_D2_dean_vs_self.blast.out",
+  blast_out = "results/lib_compare/D.tristis_nanopore_D2_dean_vs_self.blast.out",
   blast_query_lib = lib_Dtri_dean,
   blast_subject_lib = lib_Dtri_dean,
   species = "D.tristis",
@@ -171,7 +179,7 @@ blast_Dtri_dean_vs_self <- LoadBlastComparison(
   reduce_hits = FALSE)
 
 blast_Dtri_marta_vs_self <- LoadBlastComparison(
-  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_self.blast.out",
+  blast_out = "results/lib_compare/D.tristis_nanopore_D2_marta_vs_self.blast.out",
   blast_query_lib = lib_Dtri_marta,
   blast_subject_lib = lib_Dtri_marta,
   species = "D.tristis",
@@ -234,126 +242,21 @@ gt(sum_blast_all)
 PlotBlastBarMatches(blast_Dtri_dean_vs_marta)
 ```
 
-# what about reciprocal?
-Not useful really
+
+# Simpler version to pull out seq not shared by library
 ```{r}
-PlotBlastBarMatches(blast_Dtri_marta_vs_dean)
-
-```
-
-
-```{r}
-
-source("scripts/mccompare_functions.R")
-
 blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
-  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
+  blast_out = "results/lib_compare/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
   blast_query_lib = lib_Dtri_marta,
   blast_subject_lib = lib_Dtri_MCH,
   species = "D.tristis",
   strain = "nanopore_D2",
   comparison = "marta_vs_MCH")
 
-lib_Dtri_MCH_names <- as.data.frame(names(lib_Dtri_MCH))
-
-# Get the best hit which is the origninal name of the seq in the MCH lib
-blast_Dtri_marta_vs_MCH <- blast_Dtri_marta_vs_MCH %>%
-  group_by(qseqid) %>%
-  slice_max(order_by = bitscore, n = 1, with_ties = FALSE) %>%
-  ungroup()
-
-names_relate_marta <- blast_Dtri_marta_vs_MCH %>%
-  select(qseqid, sseqid) %>%
-  filter(qseqid != "None")
-
-colnames(names_relate_marta) <- c("newIDs", "seqID")
-
-# Now get the names relate to convert the final names of MY lib into the orignial MCH ones - newIDs to seqID
 names_relate <- data.table::fread(names_relate_file, sep = "\t") %>%
   select(seqID, newIDs)
 
-# Now join in the original MCH names - seqID
-blast_with_old_names <- blast_Dtri_marta_vs_dean %>%
-  left_join(names_relate, by = c("sseqid" = "newIDs"))
 
-# Now use MCH blast to identify sseqid in dean vs marta
-blast_with_old_names <- blast_with_old_names %>%
-  left_join(names_relate_marta, by = c("qseqid" = "newIDs"))
-
-blast_with_old_names <-   blast_with_old_names %>%
-  dplyr::rename(
-    name_MCH = seqID.y,
-    name_TEammo = seqID.x
-  )
-
-# Now reduce to only those I missed, with original name in the MCH library
-missing_query <- blast_with_old_names %>%
-  filter(
-    seq_match == "Missing from subject lib"
-  ) %>%
-  select(name_MCH, name_TEammo)
-
-not_missing_query <- blast_with_old_names %>%
-  filter(
-    seq_match != "Missing from query lib"
-  ) %>%
-  select(name_MCH, name_TEammo)
-
-# OK - now what happened to these sequences?
-
-presence_df1 <- checkSeqFate2(
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  MCH_output_dir = "../../mctrials_data2/MCH_output/",
-  query_ids = missing_query)
-
-summary_row1 <- colSums(presence_df1[, -1])
-summary_row1 <- c(seqID = "TOTAL_PRESENT", summary_row1)
-
-
-query_missing_fate2 <- data.frame(
-  category = names(summary_row1),
-  value = as.numeric(summary_row1)
-)
-query_missing_fate2
-
-
-# Repeat for non-missing seqs
-
-presence_df1 <- checkSeqFate2(
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  MCH_output_dir = "../../mctrials_data2/MCH_output/",
-  query_ids = as.data.frame(not_missing_query))
-
-summary_row1 <- colSums(presence_df1[, -1])
-summary_row1 <- c(seqID = "TOTAL_PRESENT", summary_row1)
-
-
-query_not_missing_fate2 <- data.frame(
-  category = names(summary_row1),
-  value = as.numeric(summary_row1)
-)
-query_not_missing_fate2
-
-write.table(missing_query$name_MCH, "missing_query.csv", 
-            sep = "\t",       # or " " for space-separated
-            row.names = FALSE,
-            col.names = FALSE,
-            quote = FALSE)
-
-# rnd-5_family-1661_s_1_unconfirmed
-```
-
-# Simpler version to double check
-```{r}
-blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
-  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
-  blast_query_lib = lib_Dtri_marta,
-  blast_subject_lib = lib_Dtri_MCH,
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  comparison = "marta_vs_MCH")
 
 marta_MCH_names <- blast_Dtri_marta_vs_MCH %>%
       filter(qseqid != "None") %>%
@@ -365,16 +268,35 @@ marta_MCH_names <- blast_Dtri_marta_vs_MCH %>%
   ) %>%
   as.data.frame()
 
+# Missing from subject
 missing_from_dean <- blast_Dtri_marta_vs_dean %>%
   filter(
     seq_match == "Missing from subject lib") %>%
     select(qseqid) %>%
   as.data.frame()
 
-missing_from_dean %>%
-  left_join(marta_MCH_names, by = c("qseqid" = "qseqid"))
+missing_from_dean_final <- missing_from_dean %>%
+  left_join(marta_MCH_names, by = c("qseqid" = "qseqid")) %>%
+  select(sseqid)
+
+# Missing from query
+missing_from_marta <- blast_Dtri_marta_vs_dean %>%
+  filter(
+    seq_match == "Missing from query lib") %>%
+    select(sseqid) %>%
+  as.data.frame()
+
+# Now join in the original MCH names - seqID
+missing_from_marta_final <- missing_from_marta %>%
+  left_join(names_relate, by = c("sseqid" = "newIDs")) %>%
+  select(seqID)
+
+write.csv(missing_from_dean_final, "missing_from_dean_final.csv", row.names = FALSE, quote = FALSE)
+write.csv(missing_from_marta_final, "missing_from_marta_final.csv", row.names = FALSE, quote = FALSE)
+
 
 ```
+
 # The fate of the missing TEs
 * My final lib was 49 vs Marta's 139 for this genome - of these 90 lost TEs:
   * 60 ended up in teNon80Lib - "complete_non808080.fa"
@@ -402,39 +324,29 @@ as.data.frame(table(blast_Dtri_marta_vs_MCH$seq_match))
 * 67 in first MI
 
 
-# Where are the missing TEs?
+## Curation of the lost seqs quick version
 
 
 ```{bash}
+genome_name="D.tristis"
+workdir="output/quick_lost_check/${genome_name}"
+mkdir -p ${workdir}
+MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
+genome="data/0_raw/D.tristis/nanopore_D2/D.tristis_nanopore_D2.fasta"
 
 conda activate bioinf
-mkdir results/mctrials2/lost
-find ../../mctrials_data2/MCH_output/D.tristis/nanopore_D2 -name "*.fa" -o -name "*.fasta" > all_fasta
+seqkit grep --threads 4 -n -f missing_from_dean_final.csv $MCH_lib > ${workdir}/curated_sequences_NR.fa
+seqkit grep --threads 4 -n -f missing_from_marta_final.csv $MCH_lib >> ${workdir}/curated_sequences_NR.fa
 
-for f in $(cat all_fasta); do
-  seqkit grep --threads 4 -n -f missing_query.csv $f > results/mctrials/lost/${}
-
-
-while IFS= read -r f; do
-  count=$(seqkit grep -n -f missing_query.csv "$f" | grep -c "^>")
-  echo "$f: $count matches"
-done < all_fasta > lost_queries
-
+conda activate MCHelper
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/curated_sequences_NR.fa \
+-g $genome \
+-o ${workdir} \
+-t 8 \
+-v Y > ../mchelper_manual.log
 ```
 
-## Curation of the lost seqs
 
-
-
-```{bash}
-MCH_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
-
-seqkit grep --threads 4 -n -f missing_query.csv $MCH_lib > results/mctrials2/lost/curated_sequences_NR.fa
-cp -r ../../mctrials_data2 ../../mctrials_data3
-cp results/mctrials2/lost/curated_sequences_NR.fa ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa
-cp results/mctrials2/lost/curated_sequences_NR.fa ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/curated_sequences_R.fa
-
-rm -fr ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/1_MI_MCH/2_MI_MCH/
-rm -fr ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/1_MI_MCH/3_MI_MCH/
-rm -fr ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/MCH_final/
-```

@@ -22,7 +22,7 @@ format:
 mkdir -p results
 
 # Make the blastdbs - they are output in same folder as the fasta input
-conda activate MCHelper
+conda activate bioinf
 
 
 while IFS=',' read -r species strain marta dean; do
@@ -40,23 +40,46 @@ done < <(sed '1d' curated_libs.csv)
 ```{r}
 #| output: false
 
-if(!require("BiocManager", character.only = T)) install.packages("BiocManager")
+#if(!require("BiocManager", character.only = T)) install.packages("BiocManager")
 
-pkgs.list <- readLines("r-requirements.txt")
+#pkgs.list <- readLines("r-requirements.txt")
 
-for (i in 1:length(pkgs.list)){
-  if(!require(pkgs.list[i], character.only = T)){
-    BiocManager::install(pkgs.list[i], Ncpus = ceiling(parallel::detectCores()/1.7))
-    require(pkgs.list[i], character.only = TRUE)
-  }else{require(pkgs.list[1],character.only = TRUE)}
-}
+#for (i in 1:length(pkgs.list)){
+#  if(!require(pkgs.list[i], character.only = T)){
+#    BiocManager::install(pkgs.list[i], Ncpus = ceiling(parallel::detectCores()/1.7))
+#    require(pkgs.list[i], character.only = TRUE)
+#  }else{require(pkgs.list[1],character.only = TRUE)}
+#}
+install.packages('BiocManager')
+install.packages('plotly')
+install.packages('dplyr')
+install.packages('ggplot2')
+install.packages('tidyr')
+install.packages('seqinr')
+install.packages('forcats')
+install.packages('gt')
+#install.packages('BiocParallel')
+BiocManager::install("Biostrings")
+install.packages('patchwork')
 ```
 
 ## Load and overall comparisons
 ```{r}
 #| output: false
-setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
+#setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
 source("scripts/mccompare_functions.R")
+
+
+library(plotly)
+library(dplyr)
+library(ggplot2)
+#library(BiocParallel)
+library(Biostrings)
+library(tidyr)
+library(seqinr)
+library(patchwork)
+library(forcats)
+library(gt)
 
 # Color schemes
 
@@ -274,7 +297,7 @@ tePlotLib(list(lib_Dmer_dean, lib_Dmer_marta))
 tePlotLib(list(lib_Dpla_dean, lib_Dpla_marta))
 ```
 
-### D.neocrodata
+### D.neocordata
 ```{r}
 tePlotLib(list(lib_Dneo_dean, lib_Dneo_marta))
 ```

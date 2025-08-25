@@ -1,15 +1,4 @@
 #!/bin/bash
-# -----------------------------Name of the job-------------------------
-#SBATCH --job-name=mchelper_teaid
-#-----------------------------Output files-----------------------------
-#SBATCH --output=mchelper_teaid.%j.out
-#SBATCH --error=mchelper_teaid.%j.err
-#-----------------------------Required resources-----------------------
-#SBATCH --time=3-00:00:00
-#SBATCH -c 8
-#SBATCH --mem-per-cpu=8G
-#-----------------------------Modules----------------------------------
-module load miniconda3/4.9.2
 eval "$(conda shell.bash hook)"
 
 THREADS="${SLURM_CPUS_PER_TASK:-8}"
@@ -48,7 +37,7 @@ fi
 # Input must be the autocurated lib from MCHelper!
 
 conda activate MCHelper
-python3 /mnt/netapp2/Store_csgcyjgp/dean/mctrials/TEammo/mchelper-ats/MCHelper.py \
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
 -r T \
 --input_type fasta \
 -l ../curated_sequences_NR.fa \

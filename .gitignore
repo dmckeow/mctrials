@@ -50,5 +50,8 @@ rsconnect/
 
 # MCHelper
 data/
+data_lost/
+output/
+results/
 
 /.quarto/

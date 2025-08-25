@@ -5,7 +5,7 @@ set -euo pipefail
 # Example:
 # ./run_blast.sh dean.fa marta.fa D.tristis nanopore_D2 genome.fa RM2.fa MCH.fa
 
-if [ "$#" -ne 7 ]; then
+if [ "$#" -ne 9 ]; then
     echo "Usage: $0 lib1 lib1_name lib2 lib2_name species strain genome RM2_lib MCH_lib"
     exit 1
 fi
@@ -20,15 +20,10 @@ genome=$7     # path to genome
 RM2_lib=$8    # user-provided label
 MCH_lib=$9    # user-provided label
 
-# Strip path + extension for lib1 and lib2 names
-lib1_name=$(basename "${lib1}" | sed 's/\.[^.]*$//')
-lib2_name=$(basename "${lib2}" | sed 's/\.[^.]*$//')
 
-outdir="results/mctrials2"
+outdir="results/lib_compare"
 mkdir -p "${outdir}"
 
-# Activate environment
-conda activate MCHelper
 
 # Make BLAST databases
 makeblastdb -in "${lib1}" -dbtype "nucl"
