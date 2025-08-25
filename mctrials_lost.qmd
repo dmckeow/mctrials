@@ -59,6 +59,17 @@ blastn -query ${marta} -db ${MCH_lib} -outfmt 6 -max_hsps 1 -out results/mctrial
 
 ```
 
+```{bash}
+lib1="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
+marta="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
+species="D.tristis"
+strain="nanopore_D2"
+genome="/mnt/netapp2/Store_csgcyjgp/dean/data/RM2/D.tristis_nanopore_D2.fasta"
+RM2_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
+MCH_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
+scripts/libcompare.sh 
+```
+
 
 ## Visualisation
 ```{r}
@@ -334,6 +345,36 @@ write.table(missing_query$name_MCH, "missing_query.csv",
 # rnd-5_family-1661_s_1_unconfirmed
 ```
 
+# Simpler version to double check
+```{r}
+blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
+  blast_out = "results/mctrials2/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
+  blast_query_lib = lib_Dtri_marta,
+  blast_subject_lib = lib_Dtri_MCH,
+  species = "D.tristis",
+  strain = "nanopore_D2",
+  comparison = "marta_vs_MCH")
+
+marta_MCH_names <- blast_Dtri_marta_vs_MCH %>%
+      filter(qseqid != "None") %>%
+      group_by(sseqid) %>%
+      slice_max(order_by = bitscore, n = 1, with_ties = FALSE) %>%
+      ungroup() %>%
+  select(
+    qseqid, sseqid
+  ) %>%
+  as.data.frame()
+
+missing_from_dean <- blast_Dtri_marta_vs_dean %>%
+  filter(
+    seq_match == "Missing from subject lib") %>%
+    select(qseqid) %>%
+  as.data.frame()
+
+missing_from_dean %>%
+  left_join(marta_MCH_names, by = c("qseqid" = "qseqid"))
+
+```
 # The fate of the missing TEs
 * My final lib was 49 vs Marta's 139 for this genome - of these 90 lost TEs:
   * 60 ended up in teNon80Lib - "complete_non808080.fa"
@@ -389,4 +430,11 @@ done < all_fasta > lost_queries
 MCH_lib="../../mctrials_data2/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
 
 seqkit grep --threads 4 -n -f missing_query.csv $MCH_lib > results/mctrials2/lost/curated_sequences_NR.fa
+cp -r ../../mctrials_data2 ../../mctrials_data3
+cp results/mctrials2/lost/curated_sequences_NR.fa ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa
+cp results/mctrials2/lost/curated_sequences_NR.fa ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/curated_sequences_R.fa
+
+rm -fr ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/1_MI_MCH/2_MI_MCH/
+rm -fr ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/1_MI_MCH/3_MI_MCH/
+rm -fr ../../mctrials_data3/MCH_output/D.tristis/nanopore_D2/MCH_final/
 ```

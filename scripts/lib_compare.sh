@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage: ./run_blast.sh lib1 lib2 species strain genome RM2_lib MCH_lib
+# Example:
+# ./run_blast.sh dean.fa marta.fa D.tristis nanopore_D2 genome.fa RM2.fa MCH.fa
+
+if [ "$#" -ne 7 ]; then
+    echo "Usage: $0 lib1 lib1_name lib2 lib2_name species strain genome RM2_lib MCH_lib"
+    exit 1
+fi
+
+lib1=$1       # e.g. dean.fa
+lib1_name=$2
+lib2=$3       # e.g. marta.fa
+lib2_name=$4
+species=$5    # e.g. D.tristis
+strain=$6     # e.g. nanopore_D2
+genome=$7     # path to genome
+RM2_lib=$8    # user-provided label
+MCH_lib=$9    # user-provided label
+
+# Strip path + extension for lib1 and lib2 names
+lib1_name=$(basename "${lib1}" | sed 's/\.[^.]*$//')
+lib2_name=$(basename "${lib2}" | sed 's/\.[^.]*$//')
+
+outdir="results/mctrials2"
+mkdir -p "${outdir}"
+
+# Activate environment
+conda activate MCHelper
+
+# Make BLAST databases
+makeblastdb -in "${lib1}" -dbtype "nucl"
+makeblastdb -in "${lib2}" -dbtype "nucl"
+makeblastdb -in "${RM2_lib}" -dbtype "nucl"
+makeblastdb -in "${MCH_lib}" -dbtype "nucl"
+
+# Reciprocal BLAST
+blastn -query "${lib1}" -db "${lib2}" -outfmt 6 -max_hsps 1 \
+    -out "${outdir}/${species}_${strain}_${lib1_name}_vs_${lib2_name}.blast.out"
+
+blastn -query "${lib2}" -db "${lib1}" -outfmt 6 -max_hsps 1 \
+    -out "${outdir}/${species}_${strain}_${lib2_name}_vs_${lib1_name}.blast.out"
+
+# Self BLASTs
+blastn -query "${lib1}" -db "${lib1}" -outfmt 6 -max_hsps 1 \
+    -out "${outdir}/${species}_${strain}_${lib1_name}_vs_self.blast.out"
+
+blastn -query "${lib2}" -db "${lib2}" -outfmt 6 -max_hsps 1 \
+    -out "${outdir}/${species}_${strain}_${lib2_name}_vs_self.blast.out"
+
+# BLAST lib2 against RM2 and MCH to recover original names
+blastn -query "${lib2}" -db "${RM2_lib}" -outfmt 6 -max_hsps 1 \
+    -out "${outdir}/${species}_${strain}_${lib2_name}_vs_RM2.blast.out"
+
+blastn -query "${lib2}" -db "${MCH_lib}" -outfmt 6 -max_hsps 1 \
+    -out "${outdir}/${species}_${strain}_${lib2_name}_vs_MCH.blast.out"

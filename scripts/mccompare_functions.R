@@ -264,14 +264,14 @@ LoadBlastComparison <- function(
   separate_wider_regex(qseqid,
     c(q_id = "[^#]+", "#",
       q_class = "[^/]+", "/?",
-      q_family = "[^/]+", "/?",
+      q_family = "[^/]*", "/?",
       q_subfamily = ".*"),
       cols_remove = FALSE
     ) %>%
   separate_wider_regex(sseqid,
     c(s_id = "[^#]+", "#",
       s_class = "[^/]+", "/?",
-      s_family = "[^/]+", "/?",
+      s_family = "[^/]*", "/?",
       s_subfamily = ".*"),
       cols_remove = FALSE
     )

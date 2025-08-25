@@ -23,6 +23,8 @@ mkdir -p results
 
 # Make the blastdbs - they are output in same folder as the fasta input
 conda activate MCHelper
+
+
 while IFS=',' read -r species strain marta dean; do
   makeblastdb -in ${marta} -dbtype "nucl"
 done < <(sed '1d' curated_libs.csv)
@@ -39,6 +41,7 @@ done < <(sed '1d' curated_libs.csv)
 #| output: false
 
 if(!require("BiocManager", character.only = T)) install.packages("BiocManager")
+
 pkgs.list <- readLines("r-requirements.txt")
 
 for (i in 1:length(pkgs.list)){
