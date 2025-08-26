@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Usage: ./run_blast.sh lib1 lib2 species strain genome RM2_lib MCH_lib
 # Example:
-# ./run_blast.sh dean.fa marta.fa D.tristis nanopore_D2 genome.fa RM2.fa MCH.fa
+# ./run_blast.sh dean.fa marta.fa D.tristis nanopore_D2 RM2.fa MCH.fa
 
-if [ "$#" -ne 9 ]; then
-    echo "Usage: $0 lib1 lib1_name lib2 lib2_name species strain genome RM2_lib MCH_lib"
+if [ "$#" -ne 8 ]; then
+    echo "Usage: $0 lib1 lib1_name lib2 lib2_name species strain RM2_lib MCH_lib"
     exit 1
 fi
 
@@ -16,9 +16,8 @@ lib2=$3       # e.g. marta.fa
 lib2_name=$4
 species=$5    # e.g. D.tristis
 strain=$6     # e.g. nanopore_D2
-genome=$7     # path to genome
-RM2_lib=$8    # user-provided label
-MCH_lib=$9    # user-provided label
+RM2_lib=$7    # user-provided label
+MCH_lib=$8    # user-provided label
 
 
 outdir="results/lib_compare"

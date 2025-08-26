@@ -676,3 +676,80 @@ checkSeqFate2 <- function(
 )
   presence_df
 }
+
+# Get TE names for those missing from query and subject
+GetMissingTEs <- function(
+  genome_name = "Genome",
+  names_relate_file_Query,
+  blast_Genome_Lib1_vs_Lib2,
+  blast_Genome_Lib2_vs_Lib1,
+  blast_Genome_Lib2_vs_MCH,
+  lib1_name = "Lib1",
+  lib2_name = "Lib2"
+){
+names_relate <- data.table::fread(names_relate_file_Query, sep = "\t") %>%
+  select(seqID, newIDs)
+
+Lib2_MCH_names <- blast_Genome_Lib2_vs_MCH %>%
+      filter(qseqid != "None") %>%
+      group_by(sseqid) %>%
+      slice_max(order_by = bitscore, n = 1, with_ties = FALSE) %>%
+      ungroup() %>%
+  select(
+    qseqid, sseqid
+  ) %>%
+  as.data.frame()
+
+  # Missing from subject
+  missing_from_Lib1 <- blast_Genome_Lib2_vs_Lib1 %>%
+    filter(
+      seq_match == "Missing from subject lib") %>%
+      select(qseqid) %>%
+    as.data.frame()
+  
+  missing_from_Lib1_recip <- blast_Genome_Lib1_vs_Lib2 %>%
+    filter(
+      seq_match == "Missing from query lib") %>%
+      select(qseqid = sseqid) %>%
+    as.data.frame()
+  
+  missing_from_Lib1 <- bind_rows(missing_from_Lib1, missing_from_Lib1_recip) %>%
+    distinct()
+
+  missing_from_Lib1_final <- missing_from_Lib1 %>%
+    left_join(Lib2_MCH_names, by = c("qseqid" = "qseqid")) %>%
+    select(sseqid)
+
+  # Missing from query
+  missing_from_Lib2 <- blast_Genome_Lib2_vs_Lib1 %>%
+    filter(
+      seq_match == "Missing from query lib") %>%
+      select(sseqid) %>%
+    as.data.frame()
+  
+  missing_from_Lib2_recip <- blast_Genome_Lib1_vs_Lib2 %>%
+    filter(
+      seq_match == "Missing from subject lib") %>%
+      select(sseqid = qseqid) %>%
+    as.data.frame()
+  
+  missing_from_Lib2 <- bind_rows(missing_from_Lib2, missing_from_Lib2_recip) %>%
+    distinct()
+
+  # Now join in the original MCH names - seqID
+  missing_from_Lib2_final <- missing_from_Lib2 %>%
+    left_join(names_relate, by = c("sseqid" = "newIDs")) %>%
+    select(seqID)
+
+  write.csv(
+    missing_from_Lib1_final,
+    paste0("missing_from_Lib1_", lib1_name, "_", genome_name, ".csv"),
+    row.names = FALSE, quote = FALSE
+  )
+
+  write.csv(
+    missing_from_Lib2_final,
+    paste0("missing_from_Lib2_", lib2_name, "_", genome_name, ".csv"),
+    row.names = FALSE, quote = FALSE
+)
+}

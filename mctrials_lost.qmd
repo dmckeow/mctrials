@@ -21,59 +21,40 @@ Now we will just focus on one - D.tristis to look at exactly why the two libs ar
 ## Run BLASTs between curated libraries
 
 ```{bash}
-#| eval: false
-#| output: false
-
-
-dean="data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
-marta="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
-species="D.tristis"
-strain="nanopore_D2"
-genome="/mnt/netapp2/Store_csgcyjgp/dean/data/RM2/D.tristis_nanopore_D2.fasta"
-RM2_lib="data/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
-MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
-
-mkdir -p results/mctrials2
-
-# Make the blastdbs - they are output in same folder as the fasta input
-conda activate MCHelper
-
-makeblastdb -in ${marta} -dbtype "nucl"
-makeblastdb -in ${dean} -dbtype "nucl"
-
-makeblastdb -in ${RM2_lib} -dbtype "nucl" # we can try blasting againts the original RM2 to retrieve TE names
-makeblastdb -in ${MCH_lib} -dbtype "nucl"
-
-# Run BLASTS - reciprocal in case useful later?
-blastn -query ${dean} -db ${marta} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_dean_vs_marta.blast.out
-blastn -query ${marta} -db ${dean} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_dean.blast.out
-
-# I noticed often 1 of my TEs has multiple high similarity hits to those in the db
-# so do a self BLAST
-
-blastn -query ${marta} -db ${marta} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_self.blast.out
-blastn -query ${dean} -db ${dean} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_dean_vs_self.blast.out
-
-# BLast martas against RM2 (clean) to retrieve original names because that metadata is lost 
-blastn -query ${marta} -db ${RM2_lib} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_RM2.blast.out
-blastn -query ${marta} -db ${MCH_lib} -outfmt 6 -max_hsps 1 -out results/lib_compare/${species}_${strain}_marta_vs_MCH.blast.out
-
-
-```
-
-```{bash}
 conda activate bioinf
 
+# D.planitibia
+lib1="data/MCH_output/D.planitibia/NA2/D.planitibia_NA2_curated-TE-library.fa"
+lib1_name="dean"
+lib2="../../data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta"
+lib2_name="marta"
+species="D.planitibia"
+strain="NA2"
+RM2_lib="data/MCH_output/D.planitibia/NA2/NA2-clean_families.fa"
+MCH_lib="data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa"
+scripts/lib_compare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $RM2_lib $MCH_lib
+
+# D.tristis
 lib1="data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
 lib1_name="dean"
 lib2="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
 lib2_name="marta"
 species="D.tristis"
 strain="nanopore_D2"
-genome="/mnt/netapp2/Store_csgcyjgp/dean/data/RM2/D.tristis_nanopore_D2.fasta"
 RM2_lib="data/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
 MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
-scripts/libcompare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $genome $RM2_lib $MCH_lib
+scripts/lib_compare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $RM2_lib $MCH_lib
+
+# D.santomea
+lib1="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq_curated-TE-library.fa"
+lib1_name="dean"
+lib2="../../data/final_libraries/D.santomea/D.santomea.TE_library.fasta"
+lib2_name="marta"
+species="D.santomea"
+strain="STO_CAGO_1482_RefSeq"
+RM2_lib="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/STO_CAGO_1482_RefSeq-clean_families.fa"
+MCH_lib="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/curated_sequences_NR.fa"
+scripts/lib_compare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $RM2_lib $MCH_lib
 ```
 
 
@@ -122,6 +103,27 @@ teClassification <- rbind(
 
 # Load libraries to compare
 
+# Drosophila planitibia
+lib_Dpla_marta <- teReadLib(
+  "../../data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.planitibia", strain = "NA2")
+
+lib_Dpla_dean <- teReadLib(
+  "data/MCH_output/D.planitibia/NA2/D.planitibia_NA2_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.planitibia", strain = "NA2")
+
+lib_Dpla_RM2 <- teReadLib(
+  "data/MCH_output/D.planitibia/NA2/NA2-clean_families.fa",
+  libIdentifier = "RM2",
+  species = "D.planitibia", strain = "NA2")
+
+lib_Dpla_MCH <- teReadLib(
+  "data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa",
+  libIdentifier = "MCH",
+  species = "D.planitibia", strain = "NA2")
+
 # Drosophila tristis
 lib_Dtri_marta <- teReadLib(
   "../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta",
@@ -143,8 +145,27 @@ lib_Dtri_MCH <- teReadLib(
   libIdentifier = "MCH",
   species = "D.tristis", strain = "nanopore_D2")
 
-# Load the names relation file from the TEammo output
-names_relate_file = "data/MCH_output/D.tristis/nanopore_D2/MCH_final/D.tristis_nanopore_D2_TE-names-relation.tsv"
+# Drosophila santomea
+lib_Dsan_marta <- teReadLib(
+  "../../data/final_libraries/D.santomea/D.santomea.TE_library.fasta",
+  libIdentifier = "Marta",
+  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
+
+lib_Dsan_dean <- teReadLib(
+  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq_curated-TE-library.fa",
+  libIdentifier = "Dean",
+  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
+
+lib_Dsan_RM2 <- teReadLib(
+  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/STO_CAGO_1482_RefSeq-clean_families.fa",
+  libIdentifier = "RM2",
+  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
+
+lib_Dsan_MCH <- teReadLib(
+  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/curated_sequences_NR.fa",
+  libIdentifier = "MCH",
+  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
+
 
 ```
 
@@ -152,6 +173,25 @@ names_relate_file = "data/MCH_output/D.tristis/nanopore_D2/MCH_final/D.tristis_n
 
 
 ```{r}
+
+# D.planitibia
+blast_Dpla_dean_vs_marta <- LoadBlastComparison(
+  blast_out = "results/lib_compare/D.planitibia_NA2_dean_vs_marta.blast.out",
+  blast_query_lib = lib_Dpla_dean,
+  blast_subject_lib = lib_Dpla_marta,
+  species = "D.planitibia",
+  strain = "NA2",
+  comparison = "dean_vs_marta")
+
+blast_Dpla_marta_vs_dean <- LoadBlastComparison(
+  blast_out = "results/lib_compare/D.planitibia_NA2_marta_vs_dean.blast.out",
+  blast_query_lib = lib_Dpla_marta,
+  blast_subject_lib = lib_Dpla_dean,
+  species = "D.planitibia",
+  strain = "NA2",
+  comparison = "marta_vs_dean")
+
+# D. tristis
 blast_Dtri_dean_vs_marta <- LoadBlastComparison(
   blast_out = "results/lib_compare/D.tristis_nanopore_D2_dean_vs_marta.blast.out",
   blast_query_lib = lib_Dtri_dean,
@@ -168,83 +208,70 @@ blast_Dtri_marta_vs_dean <- LoadBlastComparison(
   strain = "nanopore_D2",
   comparison = "marta_vs_dean")
 
-# load the self blasts
-blast_Dtri_dean_vs_self <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.tristis_nanopore_D2_dean_vs_self.blast.out",
-  blast_query_lib = lib_Dtri_dean,
-  blast_subject_lib = lib_Dtri_dean,
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  comparison = "dean_vs_self",
-  reduce_hits = FALSE)
+# D.santomea
+blast_Dsan_dean_vs_marta <- LoadBlastComparison(
+  blast_out = "results/lib_compare/D.santomea_STO_CAGO_1482_RefSeq_dean_vs_marta.blast.out",
+  blast_query_lib = lib_Dsan_dean,
+  blast_subject_lib = lib_Dsan_marta,
+  species = "D.santomea",
+  strain = "STO_CAGO_1482_RefSeq",
+  comparison = "dean_vs_marta")
 
-blast_Dtri_marta_vs_self <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.tristis_nanopore_D2_marta_vs_self.blast.out",
-  blast_query_lib = lib_Dtri_marta,
-  blast_subject_lib = lib_Dtri_marta,
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  comparison = "marta_vs_self",
-  reduce_hits = FALSE)
-
-
-```
-
-# Redundancy suspicion
-Eyeballing the BLAST hits suggests that marta's final library is more redundant than mine...
-
-
-```{r}
-# Only works with non best hit blast
-BlastSummaryStats <- function(blast, libIdentifier) {
-  summary_stats <- blast %>%
-    summarise(
-      n_query_seqs = n_distinct(qseqid),
-      n_hits_all = n(),
-      n_self_hits = sum(qseqid == sseqid),
-      n_nonself_hits_all = sum(qseqid != sseqid),
-      n_nonself_hits_perfect = sum(qseqid != sseqid & seq_match_score == 4),
-      n_nonself_hits_present80 = sum(qseqid != sseqid & seq_match_score == 3),
-      n_nonself_hits_present70 = sum(qseqid != sseqid & seq_match_score == 2)
-    ) %>%
-    mutate(
-      pct_self_hits = 100 * n_self_hits / n_hits_all,
-      pct_nonself_hits_all = 100 * n_nonself_hits_all / n_hits_all,
-      pct_nonself_hits_perfect = 100 * n_nonself_hits_perfect / n_hits_all,
-      pct_nonself_hits_present80 = 100 * n_nonself_hits_present80 / n_hits_all,
-      pct_nonself_hits_present70 = 100 * n_nonself_hits_present70 / n_hits_all
-    )
-
-    
-    summary_stats$lib <- libIdentifier
-    summary_stats
-}
-
-sum_blast_Dtri_dean_vs_self <- BlastSummaryStats(blast_Dtri_dean_vs_self, "Dtri_dean_vs_self")
-sum_blast_Dtri_marta_vs_self <- BlastSummaryStats(blast_Dtri_marta_vs_self, "Dtri_marta_vs_self")
-
-sum_blast_all <- bind_rows(
-    sum_blast_Dtri_dean_vs_self,
-    sum_blast_Dtri_marta_vs_self
-)
-
-gt(sum_blast_all)
+blast_Dsan_marta_vs_dean <- LoadBlastComparison(
+  blast_out = "results/lib_compare/D.santomea_STO_CAGO_1482_RefSeq_marta_vs_dean.blast.out",
+  blast_query_lib = lib_Dsan_marta,
+  blast_subject_lib = lib_Dsan_dean,
+  species = "D.santomea",
+  strain = "STO_CAGO_1482_RefSeq",
+  comparison = "marta_vs_dean")
 
 
 ```
 
 
 ```{r}
-#| label: fig-bar-matches-Dtri
 #| fig-height: 12
 #| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
 
 PlotBlastBarMatches(blast_Dtri_dean_vs_marta)
 ```
 
+```{r}
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dsan_dean_vs_marta)
+```
+
+```{r}
+#| fig-height: 12
+#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
+
+PlotBlastBarMatches(blast_Dpla_dean_vs_marta)
+```
+
 
 # Simpler version to pull out seq not shared by library
 ```{r}
+# D.planitibia
+blast_Dpla_marta_vs_MCH <- LoadBlastComparison(
+  blast_out = "results/lib_compare/D.planitibia_NA2_marta_vs_MCH.blast.out",
+  blast_query_lib = lib_Dpla_marta,
+  blast_subject_lib = lib_Dpla_MCH,
+  species = "D.planitibia",
+  strain = "NA2",
+  comparison = "marta_vs_MCH")
+
+GetMissingTEs(
+  genome_name = "Dpla",
+  names_relate_file_Query="data/MCH_output/D.planitibia/NA2/MCH_final/D.planitibia_NA2_TE-names-relation.tsv",
+  blast_Genome_Lib1_vs_Lib2 = blast_Dpla_dean_vs_marta,
+  blast_Genome_Lib2_vs_Lib1 = blast_Dpla_marta_vs_dean,
+  blast_Genome_Lib2_vs_MCH = blast_Dpla_marta_vs_MCH,
+  lib1_name = "dean",
+  lib2_name = "marta")
+
+# Dtristis
 blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
   blast_out = "results/lib_compare/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
   blast_query_lib = lib_Dtri_marta,
@@ -253,47 +280,32 @@ blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
   strain = "nanopore_D2",
   comparison = "marta_vs_MCH")
 
-names_relate <- data.table::fread(names_relate_file, sep = "\t") %>%
-  select(seqID, newIDs)
+GetMissingTEs(
+  genome_name = "Dtri",
+  names_relate_file_Query="data/MCH_output/D.tristis/nanopore_D2/MCH_final/D.tristis_nanopore_D2_TE-names-relation.tsv",
+  blast_Genome_Lib1_vs_Lib2 = blast_Dtri_dean_vs_marta,
+  blast_Genome_Lib2_vs_Lib1 = blast_Dtri_marta_vs_dean,
+  blast_Genome_Lib2_vs_MCH = blast_Dtri_marta_vs_MCH,
+  lib1_name = "dean",
+  lib2_name = "marta")
 
+# D.santomea
+blast_Dsan_marta_vs_MCH <- LoadBlastComparison(
+  blast_out = "results/lib_compare/D.santomea_STO_CAGO_1482_RefSeq_marta_vs_MCH.blast.out",
+  blast_query_lib = lib_Dsan_marta,
+  blast_subject_lib = lib_Dsan_MCH,
+  species = "D.santomea",
+  strain = "STO_CAGO_1482_RefSeq",
+  comparison = "marta_vs_MCH")
 
-
-marta_MCH_names <- blast_Dtri_marta_vs_MCH %>%
-      filter(qseqid != "None") %>%
-      group_by(sseqid) %>%
-      slice_max(order_by = bitscore, n = 1, with_ties = FALSE) %>%
-      ungroup() %>%
-  select(
-    qseqid, sseqid
-  ) %>%
-  as.data.frame()
-
-# Missing from subject
-missing_from_dean <- blast_Dtri_marta_vs_dean %>%
-  filter(
-    seq_match == "Missing from subject lib") %>%
-    select(qseqid) %>%
-  as.data.frame()
-
-missing_from_dean_final <- missing_from_dean %>%
-  left_join(marta_MCH_names, by = c("qseqid" = "qseqid")) %>%
-  select(sseqid)
-
-# Missing from query
-missing_from_marta <- blast_Dtri_marta_vs_dean %>%
-  filter(
-    seq_match == "Missing from query lib") %>%
-    select(sseqid) %>%
-  as.data.frame()
-
-# Now join in the original MCH names - seqID
-missing_from_marta_final <- missing_from_marta %>%
-  left_join(names_relate, by = c("sseqid" = "newIDs")) %>%
-  select(seqID)
-
-write.csv(missing_from_dean_final, "missing_from_dean_final.csv", row.names = FALSE, quote = FALSE)
-write.csv(missing_from_marta_final, "missing_from_marta_final.csv", row.names = FALSE, quote = FALSE)
-
+GetMissingTEs(
+  genome_name = "Dsan",
+  names_relate_file_Query="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/MCH_final/D.santomea_STO_CAGO_1482_RefSeq_TE-names-relation.tsv",
+  blast_Genome_Lib1_vs_Lib2 = blast_Dsan_dean_vs_marta,
+  blast_Genome_Lib2_vs_Lib1 = blast_Dsan_marta_vs_dean,
+  blast_Genome_Lib2_vs_MCH = blast_Dsan_marta_vs_MCH,
+  lib1_name = "dean",
+  lib2_name = "marta")
 
 ```
 
@@ -325,28 +337,109 @@ as.data.frame(table(blast_Dtri_marta_vs_MCH$seq_match))
 
 
 ## Curation of the lost seqs quick version
-
+With MCHelper M module, you can just inspect the pdfs of from TEaid without importing in TEammo
 
 ```{bash}
 genome_name="D.tristis"
 workdir="output/quick_lost_check/${genome_name}"
+rm -fr ${workdir}
 mkdir -p ${workdir}
 MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
 genome="data/0_raw/D.tristis/nanopore_D2/D.tristis_nanopore_D2.fasta"
+miss_lib1="missing_from_Lib1_dean_Dtri.csv"
+miss_lib2="missing_from_Lib2_marta_Dtri.csv"
 
 conda activate bioinf
-seqkit grep --threads 4 -n -f missing_from_dean_final.csv $MCH_lib > ${workdir}/curated_sequences_NR.fa
-seqkit grep --threads 4 -n -f missing_from_marta_final.csv $MCH_lib >> ${workdir}/curated_sequences_NR.fa
+seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
+seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
+
+
+conda activate MCHelper
+
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/missing_from_Lib1_dean.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib1_dean \
+-t 8 \
+-v Y > ${workdir}/mchelper_manual.log
+
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/missing_from_Lib2_marta.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib2_marta \
+-t 8 \
+-v Y > ${workdir}/mchelper_manual.log
+```
+
+```{bash}
+genome_name="D.santomea"
+workdir="output/quick_lost_check/${genome_name}"
+rm -fr ${workdir}
+mkdir -p ${workdir}
+MCH_lib="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/curated_sequences_NR.fa"
+genome="data/0_raw/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq.fasta"
+miss_lib1="missing_from_Lib1_dean_Dsan.csv"
+miss_lib2="missing_from_Lib2_marta_Dsan.csv"
+
+conda activate bioinf
+seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
+seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
 
 conda activate MCHelper
 python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
 -r T \
 --input_type fasta \
--l ${workdir}/curated_sequences_NR.fa \
--g $genome \
--o ${workdir} \
+-l ${workdir}/missing_from_Lib1_dean.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib1_dean \
 -t 8 \
--v Y > ../mchelper_manual.log
+-v Y > ${workdir}/mchelper_manual.log
+
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/missing_from_Lib2_marta.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib2_marta \
+-t 8 \
+-v Y > ${workdir}/mchelper_manual.log
 ```
 
+```{bash}
+genome_name="D.planitibia"
+workdir="output/quick_lost_check/${genome_name}"
+rm -fr ${workdir}
+mkdir -p ${workdir}
+MCH_lib="data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa"
+genome="data/0_raw/D.planitibia/NA2/D.planitibia.rm.fasta"
+miss_lib1="missing_from_Lib1_dean_Dpla.csv"
+miss_lib2="missing_from_Lib2_marta_Dpla.csv"
 
+
+conda activate bioinf
+seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
+seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
+
+conda activate MCHelper
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/missing_from_Lib1_dean.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib1_dean \
+-t 8 \
+-v Y > ${workdir}/mchelper_manual.log
+
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/missing_from_Lib2_marta.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib2_marta \
+-t 8 \
+-v Y > ${workdir}/mchelper_manual.log
+```
