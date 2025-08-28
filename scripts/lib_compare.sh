@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./run_blast.sh lib1 lib2 species strain genome RM2_lib MCH_lib
-# Example:
-# ./run_blast.sh dean.fa marta.fa D.tristis nanopore_D2 RM2.fa MCH.fa
-
 if [ "$#" -ne 8 ]; then
-    echo "Usage: $0 lib1 lib1_name lib2 lib2_name species strain RM2_lib MCH_lib"
+    echo "Usage: $0 lib1 lib1_name lib2 lib2_name species strain RM2_lib <MCHelper auto curated lib>"
     exit 1
 fi
 
@@ -49,4 +45,4 @@ blastn -query "${lib2}" -db "${RM2_lib}" -outfmt 6 -max_hsps 1 \
     -out "${outdir}/${species}_${strain}_${lib2_name}_vs_RM2.blast.out"
 
 blastn -query "${lib2}" -db "${MCH_lib}" -outfmt 6 -max_hsps 1 \
-    -out "${outdir}/${species}_${strain}_${lib2_name}_vs_MCH.blast.out"
+    -out "${outdir}/${species}_${strain}_${lib2_name}_vs_MCHelperAuto.blast.out"

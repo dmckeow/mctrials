@@ -21,45 +21,51 @@ Now we will just focus on one - D.tristis to look at exactly why the two libs ar
 ## Run BLASTs between curated libraries
 
 ```{bash}
+
+# Prepare folders and files for running pre-TEammo steps
+data="data_lost"
+csv_file="species_strains.csv"
+scripts/prep_for_TEammo.sh ${data} ${csv_file}
+
+# Then run MCHelper and TEaid
+
+# Then do manual curation
+
+# Then run scripts to compare curations 1 and 2 (1 is the one you just did)
 conda activate bioinf
+while IFS=, read -r species strain genome_path rm2_library_path curation2_final_lib busco_lib curation1 curation2; do
+    [[ -z "$species" || "$species" == \#* ]] && continue
+    scripts/lib_compare.sh \
+      ${data}/MCH_output/${species}/${strain}/${species}_${strain}_curated-TE-library.fa \
+      ${curation1} \
+      ${curation2_final_lib} \
+      ${curation2} \
+      ${species} \
+      ${strain} \
+      ${rm2_library_path} \
+      ${data}/MCH_output/${species}/${strain}/curated_sequences_NR.fa
+done < "$csv_file"
 
-# D.planitibia
-lib1="data/MCH_output/D.planitibia/NA2/D.planitibia_NA2_curated-TE-library.fa"
-lib1_name="dean"
-lib2="../../data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta"
-lib2_name="marta"
-species="D.planitibia"
-strain="NA2"
-RM2_lib="data/MCH_output/D.planitibia/NA2/NA2-clean_families.fa"
-MCH_lib="data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa"
-scripts/lib_compare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $RM2_lib $MCH_lib
-
-# D.tristis
-lib1="data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa"
-lib1_name="dean"
-lib2="../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
-lib2_name="marta"
-species="D.tristis"
-strain="nanopore_D2"
-RM2_lib="data/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa"
-MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
-scripts/lib_compare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $RM2_lib $MCH_lib
-
-# D.santomea
-lib1="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq_curated-TE-library.fa"
-lib1_name="dean"
-lib2="../../data/final_libraries/D.santomea/D.santomea.TE_library.fasta"
-lib2_name="marta"
-species="D.santomea"
-strain="STO_CAGO_1482_RefSeq"
-RM2_lib="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/STO_CAGO_1482_RefSeq-clean_families.fa"
-MCH_lib="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/curated_sequences_NR.fa"
-scripts/lib_compare.sh $lib1 $lib1_name $lib2 $lib2_name $species $strain $RM2_lib $MCH_lib
 ```
 
 
 
 ## Load and overall comparisons
+
+```{r}
+#| output: false
+#| eval: false
+install.packages('BiocManager')
+install.packages('plotly')
+install.packages('dplyr')
+install.packages('ggplot2')
+install.packages('tidyr')
+install.packages('seqinr')
+install.packages('forcats')
+install.packages('gt')
+BiocManager::install("Biostrings")
+install.packages('patchwork')
+```
 
 ```{r}
 #| output: false
@@ -103,68 +109,58 @@ teClassification <- rbind(
 
 # Load libraries to compare
 
-# Drosophila planitibia
-lib_Dpla_marta <- teReadLib(
-  "../../data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta",
-  libIdentifier = "Marta",
-  species = "D.planitibia", strain = "NA2")
+df <- read.csv("species_strains.csv", header = FALSE, comment.char = "#")
+data <- "data_lost"
 
-lib_Dpla_dean <- teReadLib(
-  "data/MCH_output/D.planitibia/NA2/D.planitibia_NA2_curated-TE-library.fa",
-  libIdentifier = "Dean",
-  species = "D.planitibia", strain = "NA2")
+# Assign correct column names
+colnames(df) <- c("species", "strain", "genome_path", "rm2_library_path",
+                  "curation2_final_lib", "busco_lib", "curation1", "curation2")
 
-lib_Dpla_RM2 <- teReadLib(
-  "data/MCH_output/D.planitibia/NA2/NA2-clean_families.fa",
-  libIdentifier = "RM2",
-  species = "D.planitibia", strain = "NA2")
+# Add a new column with the constructed curated path
+df$curation1_final_lib <- file.path(
+  data, "MCH_output",
+  df$species,
+  df$strain,
+  paste0(df$species, "_", df$strain, "_curated-TE-library.fa")
+)
 
-lib_Dpla_MCH <- teReadLib(
-  "data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa",
-  libIdentifier = "MCH",
-  species = "D.planitibia", strain = "NA2")
+df$curation1_names_relation <- file.path(
+  data, "MCH_output",
+  df$species,
+  df$strain, "MCH_final",
+  paste0(df$species, "_", df$strain, "_TE-names-relation.tsv")
+)
 
-# Drosophila tristis
-lib_Dtri_marta <- teReadLib(
-  "../../data/final_libraries/D.tristis/D.tristis.TE_library.fasta",
-  libIdentifier = "Marta",
-  species = "D.tristis", strain = "nanopore_D2")
+# For final libs
+#  For the curation2 previous ones
+read_te_wrapper <- function(row) {
+  teReadLib(
+    row[["curation2_final_lib"]],
+    libIdentifier = row[["curation2"]],
+    species      = row[["species"]],
+    strain       = row[["strain"]]
+  )
+}
+# Apply row by row
+final_libs_c1 <- apply(df, 1, function(r) read_te_wrapper(as.list(r)))
+# Give each element a clear name, e.g. species_curator
+names(final_libs_c1) <- paste(df$species, df$curation2, sep = "_")
 
-lib_Dtri_dean <- teReadLib(
-  "data/MCH_output/D.tristis/nanopore_D2/D.tristis_nanopore_D2_curated-TE-library.fa",
-  libIdentifier = "Dean",
-  species = "D.tristis", strain = "nanopore_D2")
+#  For the my curations curation1
+read_te_wrapper <- function(row) {
+  teReadLib(
+    row[["curation1_final_lib"]],
+    libIdentifier = row[["curation1"]],
+    species      = row[["species"]],
+    strain       = row[["strain"]]
+  )
+}
+# Apply row by row
+final_libs_c2 <- apply(df, 1, function(r) read_te_wrapper(as.list(r)))
+# Give each element a clear name, e.g. species_curator
+names(final_libs_c2) <- paste(df$species, df$curation1, sep = "_")
 
-lib_Dtri_RM2 <- teReadLib(
-  "data/MCH_output/D.tristis/nanopore_D2/nanopore_D2-clean_families.fa",
-  libIdentifier = "RM2",
-  species = "D.tristis", strain = "nanopore_D2")
-
-lib_Dtri_MCH <- teReadLib(
-  "data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa",
-  libIdentifier = "MCH",
-  species = "D.tristis", strain = "nanopore_D2")
-
-# Drosophila santomea
-lib_Dsan_marta <- teReadLib(
-  "../../data/final_libraries/D.santomea/D.santomea.TE_library.fasta",
-  libIdentifier = "Marta",
-  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
-
-lib_Dsan_dean <- teReadLib(
-  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq_curated-TE-library.fa",
-  libIdentifier = "Dean",
-  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
-
-lib_Dsan_RM2 <- teReadLib(
-  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/STO_CAGO_1482_RefSeq-clean_families.fa",
-  libIdentifier = "RM2",
-  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
-
-lib_Dsan_MCH <- teReadLib(
-  "data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/curated_sequences_NR.fa",
-  libIdentifier = "MCH",
-  species = "D.santomea", strain = "STO_CAGO_1482_RefSeq")
+final_libs <- c(final_libs_c1, final_libs_c2)
 
 
 ```
@@ -174,85 +170,134 @@ lib_Dsan_MCH <- teReadLib(
 
 ```{r}
 
-# D.planitibia
-blast_Dpla_dean_vs_marta <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.planitibia_NA2_dean_vs_marta.blast.out",
-  blast_query_lib = lib_Dpla_dean,
-  blast_subject_lib = lib_Dpla_marta,
-  species = "D.planitibia",
-  strain = "NA2",
-  comparison = "dean_vs_marta")
+LoadBlastComparison_wrapper <- function(row) {
+  LoadBlastComparison(
+    blast_out = paste0("results/lib_compare/", row[["species"]], "_", row[["strain"]], "_", row[["curation1"]], "_vs_", row[["curation2"]], ".blast.out"),
+    blast_query_lib = paste("final_libs$", row[["species"]], "_", row[["curation1"]]),
+    blast_subject_lib = paste("final_libs$", row[["species"]], "_",row[["curation2"]]),
+    species = row[["species"]],
+    strain = row[["strain"]],
+    comparison = paste(row[["curation1"]], row[["curation2"]], sep = "_vs_")
+    )
+}
 
-blast_Dpla_marta_vs_dean <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.planitibia_NA2_marta_vs_dean.blast.out",
-  blast_query_lib = lib_Dpla_marta,
-  blast_subject_lib = lib_Dpla_dean,
-  species = "D.planitibia",
-  strain = "NA2",
-  comparison = "marta_vs_dean")
+LoadBlastComparison_wrapper <- function(row) {
+  query_name   <- paste(row[["species"]], row[["curation1"]], sep = "_")
+  subject_name <- paste(row[["species"]], row[["curation2"]], sep = "_")
+  
+  if(!query_name %in% names(final_libs)) stop(paste("Query not found:", query_name))
+  if(!subject_name %in% names(final_libs)) stop(paste("Subject not found:", subject_name))
+  
+  LoadBlastComparison(
+    blast_out = paste0("results/lib_compare/", row[["species"]], "_", row[["strain"]], "_", row[["curation1"]], "_vs_", row[["curation2"]], ".blast.out"),
+    blast_query_lib   = final_libs[[query_name]],
+    blast_subject_lib = final_libs[[subject_name]],
+    species = row[["species"]],
+    strain  = row[["strain"]],
+    comparison = paste(row[["curation1"]], row[["curation2"]], sep = "_vs_")
+  )
+}
 
-# D. tristis
-blast_Dtri_dean_vs_marta <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.tristis_nanopore_D2_dean_vs_marta.blast.out",
-  blast_query_lib = lib_Dtri_dean,
-  blast_subject_lib = lib_Dtri_marta,
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  comparison = "dean_vs_marta")
+# For blast curator 1 (you) vs curator 2 (previous)
+blasts_c1_vs_c2 <- apply(df, 1, function(r) LoadBlastComparison_wrapper(as.list(r)))
+# Give each element a clear name, e.g. species_curator
+names(blasts_c1_vs_c2) <- paste(df$species, df$curation1, "vs", df$curation2, sep = "_")
 
-blast_Dtri_marta_vs_dean <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.tristis_nanopore_D2_marta_vs_dean.blast.out",
-  blast_query_lib = lib_Dtri_marta,
-  blast_subject_lib = lib_Dtri_dean,
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  comparison = "marta_vs_dean")
+# For blast curator 2 (previous) vs curator 1 (you)
+blasts_c2_vs_c1 <- apply(df, 1, function(r) LoadBlastComparison_wrapper(as.list(r)))
+# Give each element a clear name, e.g. species_curator
+names(blasts_c2_vs_c1) <- paste(df$species, df$curation2, "vs", df$curation1, sep = "_")
 
-# D.santomea
-blast_Dsan_dean_vs_marta <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.santomea_STO_CAGO_1482_RefSeq_dean_vs_marta.blast.out",
-  blast_query_lib = lib_Dsan_dean,
-  blast_subject_lib = lib_Dsan_marta,
-  species = "D.santomea",
-  strain = "STO_CAGO_1482_RefSeq",
-  comparison = "dean_vs_marta")
 
-blast_Dsan_marta_vs_dean <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.santomea_STO_CAGO_1482_RefSeq_marta_vs_dean.blast.out",
-  blast_query_lib = lib_Dsan_marta,
-  blast_subject_lib = lib_Dsan_dean,
-  species = "D.santomea",
-  strain = "STO_CAGO_1482_RefSeq",
-  comparison = "marta_vs_dean")
+# D.merina
+#blast_Dmer_dean_vs_marta <- LoadBlastComparison(
+#  blast_out = "results/lib_compare/D.merina_NA_dean_vs_marta.blast.out",
+#  blast_query_lib = lib_Dmer_dean,
+#  blast_subject_lib = lib_Dmer_marta,
+#  species = "D.merina",
+#  strain = "NA",
+#  comparison = "dean_vs_marta")
 
+#blast_Dmer_marta_vs_dean <- LoadBlastComparison(
+#  blast_out = "results/lib_compare/D.merina_NA_marta_vs_dean.blast.out",
+#  blast_query_lib = lib_Dmer_marta,
+#  blast_subject_lib = lib_Dmer_dean,
+#  species = "D.merina",
+#  strain = "NA",
+#  comparison = "marta_vs_dean")
+
+# Repeat for blast vs MCH auto libs
+LoadBlastComparison_wrapper <- function(row) {
+  query_name   <- paste(row[["species"]], row[["curation2"]], sep = "_")
+  
+  if(!query_name %in% names(final_libs)) stop(paste("Query not found:", query_name))
+  # We set query and subject lib as the same jsut to dupe the function as we dont need both
+  LoadBlastComparison(
+    blast_out = paste0("results/lib_compare/", row[["species"]], "_", row[["strain"]], "_", row[["curation2"]], "_vs_", "MCHelperAuto", ".blast.out"),
+    blast_query_lib   = final_libs[[query_name]],
+    blast_subject_lib = final_libs[[query_name]],
+    species = row[["species"]],
+    strain  = row[["strain"]],
+    comparison = paste(row[["curation2"]], "MCHelperAuto", sep = "_vs_")
+  )
+}
+
+# For blast curator 2 (previous) vs MCH auto library
+blasts_c2_vs_MCHelperAuto <- apply(df, 1, function(r) LoadBlastComparison_wrapper(as.list(r)))
+names(blasts_c2_vs_MCHelperAuto) <- paste(df$species, df$curation2, "vs_MCHelperAuto", sep = "_")
+
+# D.merina
+#blast_Dmer_marta_vs_MCH <- LoadBlastComparison(
+#  blast_out = "results/lib_compare/D.merina_NA_marta_vs_MCHelperAuto.blast.out",
+#  blast_query_lib = lib_Dmer_marta,
+#  blast_subject_lib = lib_Dmer_MCH,
+#  species = "D.merina",
+#  strain = "NA",
+# comparison = "marta_vs_MCH")
 
 ```
 
+# Curation vs curation composition
+TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library
 
+### D.tristis
 ```{r}
-#| fig-height: 12
-#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
-
-PlotBlastBarMatches(blast_Dtri_dean_vs_marta)
+tePlotLib(list(final_libs$D.tristis_dean, final_libs$D.tristis_RM2))
 ```
 
+### D.planitibia
 ```{r}
-#| fig-height: 12
-#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
-
-PlotBlastBarMatches(blast_Dsan_dean_vs_marta)
+tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_marta))
 ```
 
-```{r}
-#| fig-height: 12
-#| fig-cap: "TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library"
-
-PlotBlastBarMatches(blast_Dpla_dean_vs_marta)
-```
 
 
 # Simpler version to pull out seq not shared by library
 ```{r}
+
+GetMissingTEs_wrapper <- function(row) {
+  query_name   <- paste(row[["species"]], row[["curation2"]], sep = "_")
+
+  GetMissingTEs(
+  genome_name = row[["species"]],
+  names_relate_file_Query = row[["curation1_names_relation"]],
+  blast_Genome_Lib1_vs_Lib2 = blast_Dpla_dean_vs_marta,
+  blast_Genome_Lib2_vs_Lib1 = blast_Dpla_marta_vs_dean,
+  blast_Genome_Lib2_vs_MCH = blast_Dpla_marta_vs_MCH,
+  lib1_name = "dean",
+  lib2_name = "marta")
+
+}
+
+GetMissingTEs(
+  genome_name = "Dmer",
+  names_relate_file_Query="data/MCH_output/D.merina/NA/MCH_final/D.merina_NA_TE-names-relation.tsv",
+  blast_Genome_Lib1_vs_Lib2 = blast_Dmer_dean_vs_marta,
+  blast_Genome_Lib2_vs_Lib1 = blast_Dmer_marta_vs_dean,
+  blast_Genome_Lib2_vs_MCH = blast_Dmer_marta_vs_MCH,
+  lib1_name = "dean",
+  lib2_name = "marta")
+
 # D.planitibia
 blast_Dpla_marta_vs_MCH <- LoadBlastComparison(
   blast_out = "results/lib_compare/D.planitibia_NA2_marta_vs_MCH.blast.out",
@@ -418,6 +463,42 @@ MCH_lib="data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa"
 genome="data/0_raw/D.planitibia/NA2/D.planitibia.rm.fasta"
 miss_lib1="missing_from_Lib1_dean_Dpla.csv"
 miss_lib2="missing_from_Lib2_marta_Dpla.csv"
+
+
+conda activate bioinf
+seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
+seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
+
+conda activate MCHelper
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/missing_from_Lib1_dean.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib1_dean \
+-t 8 \
+-v Y > ${workdir}/mchelper_manual.log
+
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+-r T \
+--input_type fasta \
+-l ${workdir}/missing_from_Lib2_marta.fa \
+-g ${genome} \
+-o ${workdir}/missing_from_Lib2_marta \
+-t 8 \
+-v Y > ${workdir}/mchelper_manual.log
+```
+
+
+```{bash}
+genome_name="D.merina"
+workdir="output/quick_lost_check/${genome_name}"
+rm -fr ${workdir}
+mkdir -p ${workdir}
+MCH_lib="data/MCH_output/D.merina/NA/curated_sequences_NR.fa"
+genome="data/0_raw/D.merina/NA/D.merina.rm.fasta"
+miss_lib1="missing_from_Lib1_dean_Dmer.csv"
+miss_lib2="missing_from_Lib2_marta_Dmer.csv"
 
 
 conda activate bioinf

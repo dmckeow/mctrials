@@ -36,8 +36,10 @@ fi
 # Ok so we just have to TEAid independently through MCHelper - but only the version forked by Adrian
 # Input must be the autocurated lib from MCHelper!
 
+# TEammo/mchelper-ats must be in the path and executable!
+
 conda activate MCHelper
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
+python3 MCHelper.py \
 -r T \
 --input_type fasta \
 -l ../curated_sequences_NR.fa \

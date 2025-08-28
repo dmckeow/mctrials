@@ -1,15 +1,4 @@
 #!/bin/bash
-# -----------------------------Name of the job-------------------------
-#SBATCH --job-name=mchelper
-#-----------------------------Output files-----------------------------
-#SBATCH --output=mchelper.%j.out
-#SBATCH --error=mchelper.%j.err
-#-----------------------------Required resources-----------------------
-#SBATCH --time=7-00:00:00
-#SBATCH -c 8
-#SBATCH --mem-per-cpu=6G
-#-----------------------------Modules----------------------------------
-module load miniconda3/4.9.2
 eval "$(conda shell.bash hook)"
 
 THREADS="${SLURM_CPUS_PER_TASK:-8}"
@@ -50,7 +39,8 @@ fi
 
 conda activate MCHelper
 
-python3 /mnt/netapp2/Store_csgcyjgp/dean/mctrials/TEammo/mchelper-ats/MCHelper.py \
+# TEammo/mchelper-ats must be in the path and executable!
+python3 MCHelper.py \
 -r A  \
 -a F \
 --input_type fasta \

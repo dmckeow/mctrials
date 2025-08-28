@@ -473,25 +473,3 @@ PlotBlastTileMatches(blast_Dtri_dean_vs_marta)
 
 :::
 
-
-# TE size distribution
-
-```{r}
-lib1 <- width(lib_Dtri_dean) %>%
-  data.frame(length = .)
-lib1$curator <- "dean"
-
-lib2 <- width(lib_Dtri_marta) %>%
-  data.frame(length = .)
-lib2$curator <- "marta"
-
-bind_rows(lib1, lib2) %>%
-    ggplot(aes(x = length)) +
-      geom_density(aes(fill = curator), alpha = 0.5, color = "black") +
-      labs(title = "Density Plot of DNA Sequence Lengths",
-           x = "Sequence Length (bp)",
-           y = "Density") +
-      theme_minimal()
-
-```
-
