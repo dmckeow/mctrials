@@ -27,11 +27,25 @@ data="data_lost"
 csv_file="species_strains.csv"
 scripts/prep_for_TEammo.sh ${data} ${csv_file}
 
-# Then run MCHelper and TEaid
+# Then run MCHelper and TEaid (the sbatch parames are added for SLURM)
+while read line; do sed 's/; /; sbatch --cpus-per-task=8 --mem-per-cpu=6GB --partition=normal /1' $f; done < batch_run_mchelper_data_lost.sh | bash
+# Once done do:
+while read line; do sed 's/; /; sbatch --cpus-per-task=8 --mem-per-cpu=6GB --partition=normal /1' $f; done < batch_run_mchelper_teaid_data_lost.sh | bash
+```
 
 # Then do manual curation
+* Need ssh with: `ssh -L 3001:localhost:3001 user@server`
+* Go to TEammo: `cd <your path to TEammo>/TEammo`
+* Remove previous linked data if needed: `rm -f data`
+* Link your data: `ln -s ~/projects/mctrials/data_lost data`
+* Run TEammo: `nohup Rscript TEammo_app.R > teammo.log 2>&1 &` (Use srun on SLURM! `srun --cpus-per-task=8 --pty bash; Rscript TEammo_app.R > teammo.log 2>&1 &`)
+* You can watch the log file without constantly doing `cat teammo.log` with: `less +F teammo.log`
+* Then curate!
+* In case a process was not cancelled properly and it is stilling running: `lsof -i :3001`, then stop the process with: `kill -9 <pid>`
+
 
 # Then run scripts to compare curations 1 and 2 (1 is the one you just did)
+```{bash}
 conda activate bioinf
 while IFS=, read -r species strain genome_path rm2_library_path curation2_final_lib busco_lib curation1 curation2; do
     [[ -z "$species" || "$species" == \#* ]] && continue
@@ -71,7 +85,6 @@ install.packages('patchwork')
 #| output: false
 #setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
 source("scripts/mccompare_functions.R")
-
 
 library(plotly)
 library(dplyr)

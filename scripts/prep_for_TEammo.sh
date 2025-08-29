@@ -71,7 +71,7 @@ done < "$csv_file" | sed -E 's/ +/ /g' > batch_run_mchelper_${data}.sh
 while IFS=, read -r species strain genome_path rm2_library_path curation2_final_lib busco_lib curation1 curation2; do
     [[ -z "$species" || "$species" == \#* ]] && continue
     echo "cd ${data}/MCH_output/${species}/${strain}; \
-        sbatch $(realpath scripts/mchelper_teaid.sh) \
+        $(realpath scripts/mchelper_teaid.sh) \
         -g $(realpath ${data}/0_raw/${species}/${strain}/$(basename $genome_path)); \
         cd -"
 done < "$csv_file" | sed -E 's/ +/ /g' > batch_run_mchelper_teaid_${data}.sh
