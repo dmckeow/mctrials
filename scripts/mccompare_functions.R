@@ -718,6 +718,7 @@ Lib2_MCH_names <- blast_Genome_Lib2_vs_MCH %>%
 
   missing_from_Lib1_final <- missing_from_Lib1 %>%
     left_join(Lib2_MCH_names, by = c("qseqid" = "qseqid")) %>%
+    filter(!is.na(sseqid)) %>%
     select(sseqid)
 
   # Missing from query
@@ -739,17 +740,18 @@ Lib2_MCH_names <- blast_Genome_Lib2_vs_MCH %>%
   # Now join in the original MCH names - seqID
   missing_from_Lib2_final <- missing_from_Lib2 %>%
     left_join(names_relate, by = c("sseqid" = "newIDs")) %>%
+    filter(!is.na(seqID)) %>%
     select(seqID)
 
   write.csv(
     missing_from_Lib1_final,
-    paste0("missing_from_Lib1_", lib1_name, "_", genome_name, ".csv"),
+    paste0("results/missing_from_Lib1_", lib1_name, "_", genome_name, ".csv"),
     row.names = FALSE, quote = FALSE
   )
 
   write.csv(
     missing_from_Lib2_final,
-    paste0("missing_from_Lib2_", lib2_name, "_", genome_name, ".csv"),
+    paste0("results/missing_from_Lib2_", lib2_name, "_", genome_name, ".csv"),
     row.names = FALSE, quote = FALSE
 )
 }

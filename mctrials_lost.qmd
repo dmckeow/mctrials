@@ -170,16 +170,6 @@ final_libs <- c(final_libs_c1, final_libs_c2)
 
 ```{r}
 
-LoadBlastComparison_wrapper <- function(row) {
-  LoadBlastComparison(
-    blast_out = paste0("results/lib_compare/", row[["species"]], "_", row[["strain"]], "_", row[["curation1"]], "_vs_", row[["curation2"]], ".blast.out"),
-    blast_query_lib = paste("final_libs$", row[["species"]], "_", row[["curation1"]]),
-    blast_subject_lib = paste("final_libs$", row[["species"]], "_",row[["curation2"]]),
-    species = row[["species"]],
-    strain = row[["strain"]],
-    comparison = paste(row[["curation1"]], row[["curation2"]], sep = "_vs_")
-    )
-}
 
 LoadBlastComparison_wrapper <- function(row) {
   query_name   <- paste(row[["species"]], row[["curation1"]], sep = "_")
@@ -265,96 +255,44 @@ TE query library (current curator, Dean) vs subject library (previous curator, M
 tePlotLib(list(final_libs$D.tristis_dean, final_libs$D.tristis_RM2))
 ```
 
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.tristis_dean_vs_RM2)
+```
+
 ### D.planitibia
 ```{r}
 tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_marta))
 ```
 
-
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_marta)
+```
 
 # Simpler version to pull out seq not shared by library
 ```{r}
 
 GetMissingTEs_wrapper <- function(row) {
-  query_name   <- paste(row[["species"]], row[["curation2"]], sep = "_")
+  blast_out_name1   <- paste(row[["species"]], row[["curation1"]], "vs", row[["curation2"]], sep = "_")
+  blast_out_name2   <- paste(row[["species"]], row[["curation2"]], "vs", row[["curation1"]], sep = "_")
+  blast_out_name2MCH   <- paste(row[["species"]], row[["curation2"]], "vs", "MCHelperAuto", sep = "_")
 
   GetMissingTEs(
-  genome_name = row[["species"]],
-  names_relate_file_Query = row[["curation1_names_relation"]],
-  blast_Genome_Lib1_vs_Lib2 = blast_Dpla_dean_vs_marta,
-  blast_Genome_Lib2_vs_Lib1 = blast_Dpla_marta_vs_dean,
-  blast_Genome_Lib2_vs_MCH = blast_Dpla_marta_vs_MCH,
-  lib1_name = "dean",
-  lib2_name = "marta")
+    genome_name = row[["species"]],
+    names_relate_file_Query = row[["curation1_names_relation"]],
+    blast_Genome_Lib1_vs_Lib2 = blasts_c1_vs_c2[[blast_out_name1]],
+    blast_Genome_Lib2_vs_Lib1 = blasts_c2_vs_c1[[blast_out_name2]],
+    blast_Genome_Lib2_vs_MCH = blasts_c2_vs_MCHelperAuto[[blast_out_name2MCH]],
+    lib1_name = row[["curation1"]],
+    lib2_name = row[["curation2"]])
 
 }
 
-GetMissingTEs(
-  genome_name = "Dmer",
-  names_relate_file_Query="data/MCH_output/D.merina/NA/MCH_final/D.merina_NA_TE-names-relation.tsv",
-  blast_Genome_Lib1_vs_Lib2 = blast_Dmer_dean_vs_marta,
-  blast_Genome_Lib2_vs_Lib1 = blast_Dmer_marta_vs_dean,
-  blast_Genome_Lib2_vs_MCH = blast_Dmer_marta_vs_MCH,
-  lib1_name = "dean",
-  lib2_name = "marta")
-
-# D.planitibia
-blast_Dpla_marta_vs_MCH <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.planitibia_NA2_marta_vs_MCH.blast.out",
-  blast_query_lib = lib_Dpla_marta,
-  blast_subject_lib = lib_Dpla_MCH,
-  species = "D.planitibia",
-  strain = "NA2",
-  comparison = "marta_vs_MCH")
-
-GetMissingTEs(
-  genome_name = "Dpla",
-  names_relate_file_Query="data/MCH_output/D.planitibia/NA2/MCH_final/D.planitibia_NA2_TE-names-relation.tsv",
-  blast_Genome_Lib1_vs_Lib2 = blast_Dpla_dean_vs_marta,
-  blast_Genome_Lib2_vs_Lib1 = blast_Dpla_marta_vs_dean,
-  blast_Genome_Lib2_vs_MCH = blast_Dpla_marta_vs_MCH,
-  lib1_name = "dean",
-  lib2_name = "marta")
-
-# Dtristis
-blast_Dtri_marta_vs_MCH <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.tristis_nanopore_D2_marta_vs_MCH.blast.out",
-  blast_query_lib = lib_Dtri_marta,
-  blast_subject_lib = lib_Dtri_MCH,
-  species = "D.tristis",
-  strain = "nanopore_D2",
-  comparison = "marta_vs_MCH")
-
-GetMissingTEs(
-  genome_name = "Dtri",
-  names_relate_file_Query="data/MCH_output/D.tristis/nanopore_D2/MCH_final/D.tristis_nanopore_D2_TE-names-relation.tsv",
-  blast_Genome_Lib1_vs_Lib2 = blast_Dtri_dean_vs_marta,
-  blast_Genome_Lib2_vs_Lib1 = blast_Dtri_marta_vs_dean,
-  blast_Genome_Lib2_vs_MCH = blast_Dtri_marta_vs_MCH,
-  lib1_name = "dean",
-  lib2_name = "marta")
-
-# D.santomea
-blast_Dsan_marta_vs_MCH <- LoadBlastComparison(
-  blast_out = "results/lib_compare/D.santomea_STO_CAGO_1482_RefSeq_marta_vs_MCH.blast.out",
-  blast_query_lib = lib_Dsan_marta,
-  blast_subject_lib = lib_Dsan_MCH,
-  species = "D.santomea",
-  strain = "STO_CAGO_1482_RefSeq",
-  comparison = "marta_vs_MCH")
-
-GetMissingTEs(
-  genome_name = "Dsan",
-  names_relate_file_Query="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/MCH_final/D.santomea_STO_CAGO_1482_RefSeq_TE-names-relation.tsv",
-  blast_Genome_Lib1_vs_Lib2 = blast_Dsan_dean_vs_marta,
-  blast_Genome_Lib2_vs_Lib1 = blast_Dsan_marta_vs_dean,
-  blast_Genome_Lib2_vs_MCH = blast_Dsan_marta_vs_MCH,
-  lib1_name = "dean",
-  lib2_name = "marta")
+apply(df, 1, function(r) GetMissingTEs_wrapper(as.list(r)))
 
 ```
 
 # The fate of the missing TEs
+This turned out to be a bug in TEammo that was not adding the 808080 models that were new families to the database
 * My final lib was 49 vs Marta's 139 for this genome - of these 90 lost TEs:
   * 60 ended up in teNon80Lib - "complete_non808080.fa"
   * 2 ended up in teStandbyLib - presumably the 707070 bug meant they were not added
@@ -382,145 +320,47 @@ as.data.frame(table(blast_Dtri_marta_vs_MCH$seq_match))
 
 
 ## Curation of the lost seqs quick version
-With MCHelper M module, you can just inspect the pdfs of from TEaid without importing in TEammo
+With MCHelper T module, you can just inspect the pdfs of from TEaid without importing in TEammo
+We have to rerun these because whilst TEammo has pdf outputs from this, it seems to overwrite them, because the plots are empty
 
 ```{bash}
-genome_name="D.tristis"
-workdir="output/quick_lost_check/${genome_name}"
-rm -fr ${workdir}
-mkdir -p ${workdir}
-MCH_lib="data/MCH_output/D.tristis/nanopore_D2/curated_sequences_NR.fa"
-genome="data/0_raw/D.tristis/nanopore_D2/D.tristis_nanopore_D2.fasta"
-miss_lib1="missing_from_Lib1_dean_Dtri.csv"
-miss_lib2="missing_from_Lib2_marta_Dtri.csv"
+data="data_lost"
+csv_file="$(realpath species_strains.csv)"
 
-conda activate bioinf
-seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
-seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
+# Then run scripts to compare curations 1 and 2 (1 is the one you just did)
+# Regex used to account for changes in classificaitns during manual curation
+while IFS=, read -r species strain genome_path rm2_library_path curation2_final_lib busco_lib curation1 curation2; do
+    [[ -z "$species" || "$species" == \#* ]] && continue
+    workdir="output/quick_lost_check/${species}"
+    mkdir -p ${workdir}
+    cd ${workdir}
+    conda activate bioinf
+    sed 's/#.*/#\.\*/g' "../../../results/missing_from_Lib1_${curation1}_${species}.csv" |\
+    seqkit grep --threads 4 -r -n -f - "../../../${data}/MCH_output/${species}/${strain}/curated_sequences_NR.fa" > missing_from_Lib1_${curation1}_${species}.fa
 
+    sed 's/#.*/#\.\*/g' "../../../results/missing_from_Lib2_${curation2}_${species}.csv" |\
+    seqkit grep --threads 4 -r -n -f - "../../../${data}/MCH_output/${species}/${strain}/curated_sequences_NR.fa" > missing_from_Lib2_${curation2}_${species}.fa
 
-conda activate MCHelper
+    conda activate MCHelper
+    python3 $(which MCHelper.py) \
+      -r T \
+      --input_type fasta \
+      -l missing_from_Lib1_${curation1}_${species}.fa \
+      -g ${genome_path} \
+      -o missing_from_Lib1_${curation1} \
+      -t ${SLURM_CPUS_PER_TASK:-4} \
+      -v Y > mchelper_manual.log
 
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib1_dean.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib1_dean \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
+    python3 $(which MCHelper.py) \
+      -r T \
+      --input_type fasta \
+      -l missing_from_Lib2_${curation2}_${species}.fa \
+      -g ${genome_path} \
+      -o missing_from_Lib2_${curation2} \
+      -t ${SLURM_CPUS_PER_TASK:-4} \
+      -v Y > mchelper_manual.log
+    cd ../../..
+done < "$csv_file"
 
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib2_marta.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib2_marta \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
 ```
 
-```{bash}
-genome_name="D.santomea"
-workdir="output/quick_lost_check/${genome_name}"
-rm -fr ${workdir}
-mkdir -p ${workdir}
-MCH_lib="data/MCH_output/D.santomea/STO_CAGO_1482_RefSeq/curated_sequences_NR.fa"
-genome="data/0_raw/D.santomea/STO_CAGO_1482_RefSeq/D.santomea_STO_CAGO_1482_RefSeq.fasta"
-miss_lib1="missing_from_Lib1_dean_Dsan.csv"
-miss_lib2="missing_from_Lib2_marta_Dsan.csv"
-
-conda activate bioinf
-seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
-seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
-
-conda activate MCHelper
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib1_dean.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib1_dean \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
-
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib2_marta.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib2_marta \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
-```
-
-```{bash}
-genome_name="D.planitibia"
-workdir="output/quick_lost_check/${genome_name}"
-rm -fr ${workdir}
-mkdir -p ${workdir}
-MCH_lib="data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa"
-genome="data/0_raw/D.planitibia/NA2/D.planitibia.rm.fasta"
-miss_lib1="missing_from_Lib1_dean_Dpla.csv"
-miss_lib2="missing_from_Lib2_marta_Dpla.csv"
-
-
-conda activate bioinf
-seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
-seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
-
-conda activate MCHelper
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib1_dean.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib1_dean \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
-
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib2_marta.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib2_marta \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
-```
-
-
-```{bash}
-genome_name="D.merina"
-workdir="output/quick_lost_check/${genome_name}"
-rm -fr ${workdir}
-mkdir -p ${workdir}
-MCH_lib="data/MCH_output/D.merina/NA/curated_sequences_NR.fa"
-genome="data/0_raw/D.merina/NA/D.merina.rm.fasta"
-miss_lib1="missing_from_Lib1_dean_Dmer.csv"
-miss_lib2="missing_from_Lib2_marta_Dmer.csv"
-
-
-conda activate bioinf
-seqkit grep --threads 4 -n -f ${miss_lib1} $MCH_lib > ${workdir}/missing_from_Lib1_dean.fa
-seqkit grep --threads 4 -n -f ${miss_lib2} $MCH_lib > ${workdir}/missing_from_Lib2_marta.fa
-
-conda activate MCHelper
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib1_dean.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib1_dean \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
-
-python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
--r T \
---input_type fasta \
--l ${workdir}/missing_from_Lib2_marta.fa \
--g ${genome} \
--o ${workdir}/missing_from_Lib2_marta \
--t 8 \
--v Y > ${workdir}/mchelper_manual.log
-```

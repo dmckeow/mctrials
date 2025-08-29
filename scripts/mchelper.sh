@@ -40,7 +40,7 @@ fi
 conda activate MCHelper
 
 # TEammo/mchelper-ats must be in the path and executable!
-python3 MCHelper.py \
+python3 $(which MCHelper.py) \
 -r A  \
 -a F \
 --input_type fasta \
