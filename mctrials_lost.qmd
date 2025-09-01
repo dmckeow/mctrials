@@ -261,7 +261,64 @@ names(blasts_c2_vs_MCHelperAuto) <- paste(df$species, df$curation2, "vs_MCHelper
 ```
 
 # Curation vs curation composition
+Three controls included to check that workflow is comparing libraries properly: D.planitibia duplicate, with the same library comapred to itself: unchanged, with 7 LINE/LOAs removed, and 17 LTR/BelPaos added from D.tristis
+
 TE query library (current curator, Dean) vs subject library (previous curator, Marta) by BLASTn hit totals (A), percent by TE classification (B), and by total quantites of TE consensuses missing from the query library (C), also shown as classification None/None/None in A & B. BLASTn hits of TE consensus library categorised by BLAST percent identity (pident): Perfect, 95-100 %; Present 80, 80-94 %; Present 70, 70-79 %; Missing, 69 % > - subdivided by missing from query or subject library
+
+::: {.panel-tabset}
+
+### D.planitibia - sanity test 1 vs self
+Simply comparing a curated library against itself
+✅ Dpla vs itself plots a perfect library
+```{r}
+tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_dean_same))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_dean_same)
+```
+
+### D.planitibia - sanity test 2 vs self with removed TEs
+Comparing a curated library against itself with 4 LINE/LOA TEs, 1 LINE, and 1 TIR/TC1-MARINER removed
+✅ Show TEs expected to be missing plotted
+```{r}
+tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_dean_test_removed_LOAs))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_dean_test_removed_LOAs)
+```
+
+### D.planitibia - sanity test 2 vs self with added TEs
+Comparing a curated library against itself with 17 LTR/BELPAO TEs added from D.tristis
+✅ Show TEs expected to be added plotted
+```{r}
+tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_dean_test_added_PAOs))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_dean_test_added_PAOs)
+```
+
+### D.birchii
+**Assessment of previous curation**: 
+
+```{r}
+tePlotLib(list(final_libs$D.birchii_dean, final_libs$D.birchii_albert))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.birchii_dean_vs_albert)
+```
+
+### D.santomea
+```{r}
+tePlotLib(list(final_libs$D.santomea_dean, final_libs$D.santomea_RM2))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.santomea_dean_vs_RM2)
+```
 
 ### D.tristis
 ```{r}
@@ -280,6 +337,8 @@ tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_marta))
 ```{r}
 PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_marta)
 ```
+
+:::
 
 # Simpler version to pull out seq not shared by library
 ```{r}
@@ -335,6 +394,11 @@ as.data.frame(table(blast_Dtri_marta_vs_MCH$seq_match))
 ## Curation of the lost seqs quick version
 With MCHelper T module, you can just inspect the pdfs of from TEaid without importing in TEammo
 We have to rerun these because whilst TEammo has pdf outputs from this, it seems to overwrite them, because the plots are empty
+Then look at the plots from te aid to see what was missing and assess if it is ok, e.g.:  
+output/quick_lost_check/D.birchii/missing_from_Lib1_dean/te_aid/rnd-1_family-401_s_1.fa.c2g.pdf
+
+### Sanity tests
+The D.planitbia duplicates against themselves all make sense - sequences added to the TEs by homology to database cannot be inspected as they are from the common database
 
 ```{bash}
 data="data_lost"
@@ -345,6 +409,7 @@ csv_file="$(realpath species_strains.csv)"
 while IFS=, read -r species strain genome_path rm2_library_path curation2_final_lib busco_lib curation1 curation2; do
     [[ -z "$species" || "$species" == \#* ]] && continue
     workdir="output/quick_lost_check/${species}"
+    #rm -fr ${workdir}
     mkdir -p ${workdir}
     cd ${workdir}
     conda activate bioinf
@@ -362,7 +427,7 @@ while IFS=, read -r species strain genome_path rm2_library_path curation2_final_
       -g ${genome_path} \
       -o missing_from_Lib1_${curation1} \
       -t ${SLURM_CPUS_PER_TASK:-4} \
-      -v Y > mchelper_manual.log
+      -v Y
 
     python3 $(which MCHelper.py) \
       -r T \
@@ -371,7 +436,7 @@ while IFS=, read -r species strain genome_path rm2_library_path curation2_final_
       -g ${genome_path} \
       -o missing_from_Lib2_${curation2} \
       -t ${SLURM_CPUS_PER_TASK:-4} \
-      -v Y > mchelper_manual.log
+      -v Y
     cd ../../..
 done < "$csv_file"
 
