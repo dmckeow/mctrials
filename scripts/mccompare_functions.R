@@ -264,15 +264,15 @@ LoadBlastComparison <- function(
   separate_wider_regex(qseqid,
     c(q_id = "[^#]+", "#",
       q_class = "[^/]+", "/?",
-      q_family = "[^/]*", "/?",
-      q_subfamily = ".*"),
+      q_order = "[^/]*", "/?",
+      q_superfamily = ".*"),
       cols_remove = FALSE
     ) %>%
   separate_wider_regex(sseqid,
     c(s_id = "[^#]+", "#",
       s_class = "[^/]+", "/?",
-      s_family = "[^/]*", "/?",
-      s_subfamily = ".*"),
+      s_order = "[^/]*", "/?",
+      s_superfamily = ".*"),
       cols_remove = FALSE
     )
   
@@ -282,31 +282,33 @@ LoadBlastComparison <- function(
       between(pident, 95, 100) ~ "Perfect, 95-100",
       between(pident, 80, 94.999) ~ "Present, 80",
       between(pident, 70, 79.999) ~ "Present, 70",
+      between(pident, 0.001, 69.999) ~ "Present, <70",
       (pident <= 69.999 | is.na(pident)) & is.na(sseqid) ~ "Missing from subject lib",
       (pident <= 69.999 | is.na(pident)) & is.na(qseqid) ~ "Missing from query lib"
     ),
     seq_match_score = case_when(
-      between(pident, 95, 100) ~ 4,
-      between(pident, 80, 94.999) ~ 3,
-      between(pident, 70, 79.999) ~ 2,
+      between(pident, 95, 100) ~ 5,
+      between(pident, 80, 94.999) ~ 4,
+      between(pident, 70, 79.999) ~ 3,
+      between(pident, 0.001, 69.999) ~ 2,
       (pident <= 69.999 | is.na(pident)) & is.na(sseqid) ~ 1,
       (pident <= 69.999 | is.na(pident)) & is.na(qseqid) ~ 0
     ),
     class_match = case_when(
         is.na(sseqid) ~ "Missing from subject lib",
         is.na(qseqid) ~ "Missing from query lib",
-        q_class == s_class & q_family == s_family & q_subfamily == s_subfamily ~ "Class, Family, Subfamily",
-        q_class == s_class & q_family == s_family & q_subfamily != s_subfamily ~ "Class, Family",
-        q_class == s_class & q_family != s_family & q_subfamily != s_subfamily ~ "Class",
-        q_class != s_class & q_family != s_family & q_subfamily != s_subfamily ~ "None"
+        q_class == s_class & q_order == s_order & q_superfamily == s_superfamily ~ "Class, Order, Superfamily",
+        q_class == s_class & q_order == s_order & q_superfamily != s_superfamily ~ "Class, Order",
+        q_class == s_class & q_order != s_order & q_superfamily != s_superfamily ~ "Class",
+        q_class != s_class & q_order != s_order & q_superfamily != s_superfamily ~ "None"
       ),
     class_match_score = case_when(
         is.na(sseqid) ~ 0,
         is.na(qseqid) ~ 0,
-        q_class == s_class & q_family == s_family & q_subfamily == s_subfamily ~ 4,
-        q_class == s_class & q_family == s_family & q_subfamily != s_subfamily ~ 3,
-        q_class == s_class & q_family != s_family & q_subfamily != s_subfamily ~ 2,
-        q_class != s_class & q_family != s_family & q_subfamily != s_subfamily ~ 1
+        q_class == s_class & q_order == s_order & q_superfamily == s_superfamily ~ 4,
+        q_class == s_class & q_order == s_order & q_superfamily != s_superfamily ~ 3,
+        q_class == s_class & q_order != s_order & q_superfamily != s_superfamily ~ 2,
+        q_class != s_class & q_order != s_order & q_superfamily != s_superfamily ~ 1
       )
   )
 
@@ -318,8 +320,8 @@ LoadBlastComparison <- function(
 
   blast <- blast %>%
   mutate(
-    q_classification = paste(q_class, q_family, q_subfamily, sep = "/"),
-    s_classification = paste(s_class, s_family, s_subfamily, sep = "/")
+    q_classification = paste(q_class, q_order, q_superfamily, sep = "/"),
+    s_classification = paste(s_class, s_order, s_superfamily, sep = "/")
   )
 
   blast
@@ -347,8 +349,8 @@ PlotBlastTileMatches <- function(blast_input) {
     ) %>%
     ungroup() %>%
     mutate(
-      class_match = factor(class_match, levels = c("Missing from query lib", "Missing from subject lib", "None", "Class", "Class, Family", "Class, Family, Subfamily")),
-      seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, 70", "Present, 80", "Perfect, 95-100"))
+      class_match = factor(class_match, levels = c("Missing from query lib", "Missing from subject lib", "None", "Class", "Class, Family", "Class, Order, Superfamily")),
+      seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, <70", "Present, 70", "Present, 80", "Perfect, 95-100"))
     )
 
     p1 <- df1 %>%
@@ -404,7 +406,7 @@ PlotBlastBarMatches <- function(blast_input) {
         n = n()
         ) %>%
       mutate(
-        seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, 70", "Present, 80", "Perfect, 95-100"))
+        seq_match = factor(seq_match, levels = c("Missing from query lib", "Missing from subject lib", "Present, <70", "Present, 70", "Present, 80", "Perfect, 95-100"))
       )
   bp1 <- df %>%
     ggplot(aes(fill=seq_match, y=n, x=reorder(q_classification, n))) + 

@@ -21,7 +21,8 @@ Now we will just focus on one - D.tristis to look at exactly why the two libs ar
 ## Run BLASTs between curated libraries
 
 ```{bash}
-
+#| output: false
+#| eval: false
 # Prepare folders and files for running pre-TEammo steps
 data="data_lost"
 csv_file="species_strains.csv"
@@ -106,9 +107,10 @@ library(gt)
 palette_seq_match <- c(
   "Missing from query lib" = "black",                     # Clear and bold
   "Missing from subject lib" = "grey50",                  # Distinct but neutral
-  "Present, 70" = RColorBrewer::brewer.pal(1, "Greens")[1],  # Light green
-  "Present, 80" = RColorBrewer::brewer.pal(2, "Greens")[2],  # Medium green
-  "Perfect, 95-100" = RColorBrewer::brewer.pal(3, "Greens")[3]  # Bright green
+  "Present, <70" = RColorBrewer::brewer.pal(1, "Greens")[1],  # Lightest green
+  "Present, 70" = RColorBrewer::brewer.pal(2, "Greens")[2],  # Light green
+  "Present, 80" = RColorBrewer::brewer.pal(3, "Greens")[3],  # Medium green
+  "Perfect, 95-100" = RColorBrewer::brewer.pal(4, "Greens")[4]  # Bright green
 )
 
 # Load the TE classifications
@@ -300,16 +302,6 @@ tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_dean_test_a
 PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_dean_test_added_PAOs)
 ```
 
-### D.birchii
-**Assessment of previous curation**: 
-
-```{r}
-tePlotLib(list(final_libs$D.birchii_dean, final_libs$D.birchii_albert))
-```
-
-```{r}
-PlotBlastBarMatches(blasts_c1_vs_c2$D.birchii_dean_vs_albert)
-```
 
 ### D.santomea
 ```{r}
@@ -329,7 +321,51 @@ tePlotLib(list(final_libs$D.tristis_dean, final_libs$D.tristis_RM2))
 PlotBlastBarMatches(blasts_c1_vs_c2$D.tristis_dean_vs_RM2)
 ```
 
-### D.planitibia
+### D.birchii  (35 party - Albert)
+**Assessment of previous curation**:  
+**Missing from me (4):**  
+* I missed 2-4 MITEs
+**Missing from previous (22):**  
+* LTRs: Full length (4-6 kb), most domains (4-6): 13
+* TRIMS: 1
+* Helitrons (with HEL domains): 2
+* MITEs (often with short TIRs): 2
+* TIRs (often with no TIRs, but of expected length and Tase): 2
+* LTRs maybe that should be removed because chimeric: 1
+* Maverick fragment: 1
+
+```{r}
+tePlotLib(list(final_libs$D.birchii_dean, final_libs$D.birchii_albert))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.birchii_dean_vs_albert)
+```
+
+### D.neocordata (35 party)
+**Assessment of previous curation**:  
+**Missing from me ():**  
+**Missing from previous ():**  
+
+```{r}
+tePlotLib(list(final_libs$D.neocordata_dean, final_libs$D.neocordata_giannis))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.neocordata_dean_vs_giannis)
+```
+
+### D.planitibia (35 party - Marta)
+**Assessment of previous curation**:  
+**Missing from me (3):**  
+* Helitron without domain: 1
+* MITE: 1
+* Short LINE fragment: 1
+
+**Missing from previous (2):**  
+* Helitron without domain: 1
+* LARD: 1
+
 ```{r}
 tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_marta))
 ```
@@ -338,9 +374,38 @@ tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_marta))
 PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_marta)
 ```
 
+### D.willistoni (35 party - Simon)
+**Assessment of previous curation**:  
+**Missing from me (12):**  
+* LTRs: Full length (4-6 kb), most domains (4-6): 3
+* LTRs: Other fragments less than this: 4
+* LINEs: 2-5 kb, most domains 1-2: 1
+* Full length LINES with no domains: 1
+* MITE: 1
+* Helitron without HEL domain: 2
+
+**Missing from previous (63):**  
+* LTRs: Full length (4-6 kb), most domains (4-6): **17** (some seem to have minor chimerism, or their domains appeared only in table, not on plot)
+* LTRs: Other fragments less than this: **2**
+* LINEs: 2-5 kb, most domains 1-2: **4**
+* LARDs: **1**
+* MITEs: **6**
+* Helitrons with domain: **5**
+* TIRs with Tase but no/imperfect TIRs: **26**
+
+
+
+```{r}
+tePlotLib(list(final_libs$D.willistoni_dean, final_libs$D.willistoni_simon))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.willistoni_dean_vs_simon)
+```
+
 :::
 
-# Simpler version to pull out seq not shared by library
+# Extract and examine TEs not shared between libraries
 ```{r}
 
 GetMissingTEs_wrapper <- function(row) {
