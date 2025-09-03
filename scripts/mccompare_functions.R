@@ -282,17 +282,17 @@ LoadBlastComparison <- function(
       between(pident, 95, 100) ~ "Perfect, 95-100",
       between(pident, 80, 94.999) ~ "Present, 80",
       between(pident, 70, 79.999) ~ "Present, 70",
-      between(pident, 0.001, 69.999) ~ "Present, <70",
-      (pident <= 69.999 | is.na(pident)) & is.na(sseqid) ~ "Missing from subject lib",
-      (pident <= 69.999 | is.na(pident)) & is.na(qseqid) ~ "Missing from query lib"
+      between(pident, 0, 69.999) ~ "Present, <70",
+      is.na(pident) & is.na(sseqid) ~ "Missing from subject lib",
+      is.na(pident) & is.na(qseqid) ~ "Missing from query lib"
     ),
     seq_match_score = case_when(
       between(pident, 95, 100) ~ 5,
       between(pident, 80, 94.999) ~ 4,
       between(pident, 70, 79.999) ~ 3,
-      between(pident, 0.001, 69.999) ~ 2,
-      (pident <= 69.999 | is.na(pident)) & is.na(sseqid) ~ 1,
-      (pident <= 69.999 | is.na(pident)) & is.na(qseqid) ~ 0
+      between(pident, 0, 69.999) ~ 2,
+      is.na(pident) & is.na(sseqid) ~ 1,
+      is.na(pident) & is.na(qseqid) ~ 0
     ),
     class_match = case_when(
         is.na(sseqid) ~ "Missing from subject lib",
@@ -460,6 +460,30 @@ PlotBlastBarMatches <- function(blast_input) {
   bp1 + bp2 + bp3 + bp4 +
   plot_layout(guides = 'collect', ncol = 1) +
   plot_annotation(tag_levels = 'A')
+}
+
+SummariseBlastBarMatches <- function(blast_input) {
+  df <- bind_rows(
+    blast_input %>% filter(qseqid == "None"),                # keep all None
+    blast_input %>% filter(qseqid != "None") %>%
+      distinct(qseqid, .keep_all = TRUE)                     # unique for others
+  ) %>%
+    group_by(seq_match) %>%
+    summarize(n = n()) %>%
+    mutate(
+      seq_match = factor(
+        seq_match,
+        levels = c(
+          "Missing from query lib",
+          "Missing from subject lib",
+          "Present, <70",
+          "Present, 70",
+          "Present, 80",
+          "Perfect, 95-100"
+        )
+      )
+    )
+  df
 }
 
 

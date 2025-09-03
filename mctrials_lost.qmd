@@ -105,12 +105,12 @@ library(gt)
 # Color schemes
 
 palette_seq_match <- c(
-  "Missing from query lib" = "black",                     # Clear and bold
-  "Missing from subject lib" = "grey50",                  # Distinct but neutral
-  "Present, <70" = RColorBrewer::brewer.pal(1, "Greens")[1],  # Lightest green
-  "Present, 70" = RColorBrewer::brewer.pal(2, "Greens")[2],  # Light green
-  "Present, 80" = RColorBrewer::brewer.pal(3, "Greens")[3],  # Medium green
-  "Perfect, 95-100" = RColorBrewer::brewer.pal(4, "Greens")[4]  # Bright green
+  "Missing from query lib" = "black",                     
+  "Missing from subject lib" = "grey50",                  
+  "Present, <70" = RColorBrewer::brewer.pal(2, "YlGn")[2],
+  "Present, 70" = RColorBrewer::brewer.pal(3, "YlGn")[3],
+  "Present, 80" = RColorBrewer::brewer.pal(4, "YlGn")[4],
+  "Perfect, 95-100" = RColorBrewer::brewer.pal(5, "YlGn")[5]
 )
 
 # Load the TE classifications
@@ -323,9 +323,9 @@ PlotBlastBarMatches(blasts_c1_vs_c2$D.tristis_dean_vs_RM2)
 
 ### D.birchii  (35 party - Albert)
 **Assessment of previous curation**:  
-**Missing from me (4):**  
+**Missing from me (5):**  
 * I missed 2-4 MITEs
-**Missing from previous (22):**  
+**Missing from previous (5):**  
 * LTRs: Full length (4-6 kb), most domains (4-6): 13
 * TRIMS: 1
 * Helitrons (with HEL domains): 2
@@ -376,22 +376,10 @@ PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_marta)
 
 ### D.willistoni (35 party - Simon)
 **Assessment of previous curation**:  
-**Missing from me (12):**  
-* LTRs: Full length (4-6 kb), most domains (4-6): 3
-* LTRs: Other fragments less than this: 4
-* LINEs: 2-5 kb, most domains 1-2: 1
-* Full length LINES with no domains: 1
-* MITE: 1
-* Helitron without HEL domain: 2
+**Missing from me (13):**  
 
-**Missing from previous (63):**  
-* LTRs: Full length (4-6 kb), most domains (4-6): **17** (some seem to have minor chimerism, or their domains appeared only in table, not on plot)
-* LTRs: Other fragments less than this: **2**
-* LINEs: 2-5 kb, most domains 1-2: **4**
-* LARDs: **1**
-* MITEs: **6**
-* Helitrons with domain: **5**
-* TIRs with Tase but no/imperfect TIRs: **26**
+**Missing from previous (27):**  
+
 
 
 
@@ -404,6 +392,7 @@ PlotBlastBarMatches(blasts_c1_vs_c2$D.willistoni_dean_vs_simon)
 ```
 
 :::
+
 
 # Extract and examine TEs not shared between libraries
 ```{r}
@@ -465,16 +454,18 @@ output/quick_lost_check/D.birchii/missing_from_Lib1_dean/te_aid/rnd-1_family-401
 ### Sanity tests
 The D.planitbia duplicates against themselves all make sense - sequences added to the TEs by homology to database cannot be inspected as they are from the common database
 
+Beware of duplicates in the common database, because they will be added without redundancy affecting them - if you curate the same genome twice with the same name, it will add sequences with the same names to your final library!
+
+If running a curation again, do `rm -fr output/quick_lost_check` before:
+
 ```{bash}
 data="data_lost"
 csv_file="$(realpath species_strains.csv)"
-
 # Then run scripts to compare curations 1 and 2 (1 is the one you just did)
 # Regex used to account for changes in classificaitns during manual curation
 while IFS=, read -r species strain genome_path rm2_library_path curation2_final_lib busco_lib curation1 curation2; do
     [[ -z "$species" || "$species" == \#* ]] && continue
     workdir="output/quick_lost_check/${species}"
-    #rm -fr ${workdir}
     mkdir -p ${workdir}
     cd ${workdir}
     conda activate bioinf

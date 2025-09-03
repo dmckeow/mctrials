@@ -33,13 +33,6 @@ blastn -query "${lib1}" -db "${lib2}" -outfmt 6 -max_hsps 1 \
 blastn -query "${lib2}" -db "${lib1}" -outfmt 6 -max_hsps 1 \
     -out "${outdir}/${species}_${strain}_${lib2_name}_vs_${lib1_name}.blast.out"
 
-# Self BLASTs
-blastn -query "${lib1}" -db "${lib1}" -outfmt 6 -max_hsps 1 \
-    -out "${outdir}/${species}_${strain}_${lib1_name}_vs_self.blast.out"
-
-blastn -query "${lib2}" -db "${lib2}" -outfmt 6 -max_hsps 1 \
-    -out "${outdir}/${species}_${strain}_${lib2_name}_vs_self.blast.out"
-
 # BLAST lib2 against RM2 and MCH to recover original names
 blastn -query "${lib2}" -db "${RM2_lib}" -outfmt 6 -max_hsps 1 \
     -out "${outdir}/${species}_${strain}_${lib2_name}_vs_RM2.blast.out"
