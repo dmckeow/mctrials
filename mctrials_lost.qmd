@@ -47,6 +47,8 @@ while read line; do sed 's/; /; sbatch --cpus-per-task=8 --mem-per-cpu=6GB --par
 
 # Then run scripts to compare curations 1 and 2 (1 is the one you just did)
 ```{bash}
+data="data_lost"
+csv_file="species_strains.csv"
 conda activate bioinf
 while IFS=, read -r species strain genome_path rm2_library_path curation2_final_lib busco_lib curation1 curation2; do
     [[ -z "$species" || "$species" == \#* ]] && continue
@@ -324,15 +326,13 @@ PlotBlastBarMatches(blasts_c1_vs_c2$D.tristis_dean_vs_RM2)
 ### D.birchii  (35 party - Albert)
 **Assessment of previous curation**:  
 **Missing from me (5):**  
-* I missed 2-4 MITEs
+* I missed 1-2 MITEs (one has patchy coverage and low FLF)
+* 3-4 solo LTRs
 **Missing from previous (5):**  
-* LTRs: Full length (4-6 kb), most domains (4-6): 13
-* TRIMS: 1
+* TRIMS: 1, but FLF = 1 and patchy coverage
+* LTRs (fragments): 1, should have discarded
 * Helitrons (with HEL domains): 2
-* MITEs (often with short TIRs): 2
-* TIRs (often with no TIRs, but of expected length and Tase): 2
-* LTRs maybe that should be removed because chimeric: 1
-* Maverick fragment: 1
+* LTRs (long/full but with chimerism and low FLF): 1
 
 ```{r}
 tePlotLib(list(final_libs$D.birchii_dean, final_libs$D.birchii_albert))
@@ -340,12 +340,23 @@ tePlotLib(list(final_libs$D.birchii_dean, final_libs$D.birchii_albert))
 
 ```{r}
 PlotBlastBarMatches(blasts_c1_vs_c2$D.birchii_dean_vs_albert)
+SummariseBlastBarMatches(blasts_c1_vs_c2$D.birchii_dean_vs_albert)
 ```
 
 ### D.neocordata (35 party)
 **Assessment of previous curation**:  
-**Missing from me ():**  
-**Missing from previous ():**  
+**Missing from me (4):**  
+* TIRs (Full length with TIRs): 1
+* LINEs (short fragment): 1
+* Chimera LTR/TIR fragment (should be discarded): 1
+* MITE (maybe has short/no TIRs?): 1
+**Missing from previous (10):**  
+4 are duplicates of other consensus, so only 10 models are retrieved to inspect
+* LTRs (Fragment that should be discarded): 5
+* LTRs (Full length/domains, but imperfect LTRs): 3
+* TIRs (with Tase but with bad/missing TIRs): 1
+* LINEs (fragment with low FLF should be discarded): 1
+Everything I kept should be discarded in this category
 
 ```{r}
 tePlotLib(list(final_libs$D.neocordata_dean, final_libs$D.neocordata_giannis))
@@ -376,12 +387,31 @@ PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_marta)
 
 ### D.willistoni (35 party - Simon)
 **Assessment of previous curation**:  
-**Missing from me (13):**  
+**Missing from me (24):**  
+* LTRs (solo LTR): 4
+* LTRs (Full length/domains, lacking domains): 2
+* LTRs (Fragment that should be discarded): 2
+* A helitron fragment with no HEL domains: 2
+* LTRs (Full length/domains, but imperfect LTRs and/or low FLF): 1
+* LINEs (has domains, but low FLF, bad coverage): 1
+* TIRs (has Tase, but no/imperfect TIRs): 1
+Everything I missed that Simon kept should not be kept
 
-**Missing from previous (27):**  
+**Missing from previous (16):**  
+* MITEs (with TIRs, no domains, but low FLF and/or patchy coverage): 7
+* A helitron fragment with HEL domains: 4
+* TIRs (has Tase but no/imperfect TIRs, low FLF): 4
+* LTRs (Fragment that should be discarded): 3
+* LINEs (fragment): 3
+* LTRs (solo LTR): 2
+* LTRs (Full length/domains, but imperfect LTRs and/or low FLF): 1
+* MITEs (good): 1
+* LINEs (full length with domains but simple repeat region, low flf): 1
+* TIRs (has Tase and TIRs but simple repeats, low FLF): 1
+What is missing is all ok (i.e. I should have discarded), but the helitron fragments are perhaps an important difference?
 
-
-
+Overall, my curation and the previous have retained a small portion of low quality TEs, and these subset is not found in the other. Neither curation rounds have discarded good TEs that the other kept.  
+Perhaps, the helitron fragment difference is important
 
 ```{r}
 tePlotLib(list(final_libs$D.willistoni_dean, final_libs$D.willistoni_simon))
@@ -389,6 +419,7 @@ tePlotLib(list(final_libs$D.willistoni_dean, final_libs$D.willistoni_simon))
 
 ```{r}
 PlotBlastBarMatches(blasts_c1_vs_c2$D.willistoni_dean_vs_simon)
+SummariseBlastBarMatches(blasts_c1_vs_c2$D.willistoni_dean_vs_simon)
 ```
 
 :::
@@ -425,6 +456,7 @@ This turned out to be a bug in TEammo that was not adding the 808080 models that
   * 28 ended up in teIncompleteModelsLib - "incomplete_non808080.fa"
 
 ## All the final lib seqs in Marta library are in the MCHelper library
+This was to figure out why my libraries were so small at the start of mctrials - this turned out to be a bug which Adrian then fixed
 All 139 have a blast hit 95-100% hit vs the MCHelper library
 ```{r}
 length(lib_Dtri_marta)
@@ -456,7 +488,7 @@ The D.planitbia duplicates against themselves all make sense - sequences added t
 
 Beware of duplicates in the common database, because they will be added without redundancy affecting them - if you curate the same genome twice with the same name, it will add sequences with the same names to your final library!
 
-If running a curation again, do `rm -fr output/quick_lost_check` before:
+If running a curation again, do `rm -fr output/quick_lost_check` before (or specify genome folder to avoid rerunning it again for many genomes) :
 
 ```{bash}
 data="data_lost"
