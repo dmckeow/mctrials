@@ -92,7 +92,6 @@ source("scripts/mccompare_functions.R")
 library(plotly)
 library(dplyr)
 library(ggplot2)
-#library(BiocParallel)
 library(Biostrings)
 library(tidyr)
 library(seqinr)
@@ -530,3 +529,216 @@ done < "$csv_file"
 
 ```
 
+# Simplifed version
+
+## Run library compare
+
+```{bash}
+data="data_lost"
+species="D.tristis"
+strain="nanopore_D2"
+curator1="Dean"
+lib2="/hddraid5/home/dmckeown/data/final_libraries/D.tristis/D.tristis.TE_library.fasta"
+curator2="Marta"
+
+conda activate bioinf
+
+scripts/lib_compare2.sh \
+${data}/MCH_output/${species}/${strain}/${species}_${strain}_curated-TE-library.fa \
+${curator1} \
+${lib2} \
+${curator2} \
+${species} \
+${strain} \
+${data}/MCH_output/${species}/${strain}/curated_sequences_NR.fa
+
+```
+
+
+## Load and overall comparisons
+
+```{r}
+#| output: false
+#setwd("/home/csic/gcy/jgp/extra_storage/dean/mctrials/mctrials")
+source("scripts/mccompare_functions.R")
+
+library(plotly)
+library(dplyr)
+library(ggplot2)
+library(Biostrings)
+library(tidyr)
+library(seqinr)
+library(patchwork)
+library(forcats)
+library(gt)
+```
+
+```{r}
+#| output: false
+
+# Color schemes
+
+palette_seq_match <- c(
+  "Missing from lib1" = "black",                     
+  "Missing from lib2" = "grey50",                  
+  "Present, <70" = RColorBrewer::brewer.pal(2, "YlGn")[2],
+  "Present, 70" = RColorBrewer::brewer.pal(3, "YlGn")[3],
+  "Present, 80" = RColorBrewer::brewer.pal(4, "YlGn")[4],
+  "Perfect, 95-100" = RColorBrewer::brewer.pal(5, "YlGn")[5]
+)
+
+# Load the TE classifications
+teClassification <- read.table("orozco_classification-2024_mchelper.csv", sep = ";", header = TRUE)
+teClassification <- teClassification %>%
+  mutate(AppName = paste(Class, Order, Superfamily, sep ="/") %>% sub("/$", "", .) %>% sub("/$", "", .))
+teClassification <- rbind(
+  teClassification
+  , c("", "Unclassified", "", "Unclassified")
+)
+
+```
+
+# Load BLAST results and plot comparison
+
+
+```{r}
+
+Dtri <- LoadBlastComparison2(
+  "lib_compare_MCHelperAuto_vs_D.tristis-nanopore_D2-Dean.blast.out",
+  "lib_compare_MCHelperAuto_vs_D.tristis-nanopore_D2-Marta.blast.out",
+  "D.tristis",
+  "nanopore_D2",
+  "Dean_vs_Marta",
+)
+
+PlotBlastBarMatches2(Dtri)
+
+
+```
+
+
+
+### D.birchii  (35 party - Albert)
+**Assessment of previous curation**:  
+**Missing from me (5):**  
+* I missed 1-2 MITEs (one has patchy coverage and low FLF)
+* 3-4 solo LTRs
+**Missing from previous (5):**  
+* TRIMS: 1, but FLF = 1 and patchy coverage
+* LTRs (fragments): 1, should have discarded
+* Helitrons (with HEL domains): 2
+* LTRs (long/full but with chimerism and low FLF): 1
+
+```{r}
+tePlotLib(list(final_libs$D.birchii_dean, final_libs$D.birchii_albert))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.birchii_dean_vs_albert)
+SummariseBlastBarMatches(blasts_c1_vs_c2$D.birchii_dean_vs_albert)
+```
+
+### D.neocordata (35 party)
+**Assessment of previous curation**:  
+**Missing from me (4):**  
+* TIRs (Full length with TIRs): 1
+* LINEs (short fragment): 1
+* Chimera LTR/TIR fragment (should be discarded): 1
+* MITE (maybe has short/no TIRs?): 1
+**Missing from previous (10):**  
+4 are duplicates of other consensus, so only 10 models are retrieved to inspect
+* LTRs (Fragment that should be discarded): 5
+* LTRs (Full length/domains, but imperfect LTRs): 3
+* TIRs (with Tase but with bad/missing TIRs): 1
+* LINEs (fragment with low FLF should be discarded): 1
+Everything I kept should be discarded in this category
+
+```{r}
+tePlotLib(list(final_libs$D.neocordata_dean, final_libs$D.neocordata_giannis))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.neocordata_dean_vs_giannis)
+```
+
+### D.planitibia (35 party - Marta)
+**Assessment of previous curation**:  
+**Missing from me (3):**  
+* Helitron without domain: 1
+* MITE: 1
+* Short LINE fragment: 1
+
+**Missing from previous (2):**  
+* Helitron without domain: 1
+* LARD: 1
+
+```{r}
+tePlotLib(list(final_libs$D.planitibia_dean, final_libs$D.planitibia_marta))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.planitibia_dean_vs_marta)
+```
+
+### D.willistoni (35 party - Simon)
+**Assessment of previous curation**:  
+**Missing from me (24):**  
+* LTRs (solo LTR): 4
+* LTRs (Full length/domains, lacking domains): 2
+* LTRs (Fragment that should be discarded): 2
+* A helitron fragment with no HEL domains: 2
+* LTRs (Full length/domains, but imperfect LTRs and/or low FLF): 1
+* LINEs (has domains, but low FLF, bad coverage): 1
+* TIRs (has Tase, but no/imperfect TIRs): 1
+Everything I missed that Simon kept should not be kept
+
+**Missing from previous (16):**  
+* MITEs (with TIRs, no domains, but low FLF and/or patchy coverage): 7
+* A helitron fragment with HEL domains: 4
+* TIRs (has Tase but no/imperfect TIRs, low FLF): 4
+* LTRs (Fragment that should be discarded): 3
+* LINEs (fragment): 3
+* LTRs (solo LTR): 2
+* LTRs (Full length/domains, but imperfect LTRs and/or low FLF): 1
+* MITEs (good): 1
+* LINEs (full length with domains but simple repeat region, low flf): 1
+* TIRs (has Tase and TIRs but simple repeats, low FLF): 1
+What is missing is all ok (i.e. I should have discarded), but the helitron fragments are perhaps an important difference?
+
+Overall, my curation and the previous have retained a small portion of low quality TEs, and these subset is not found in the other. Neither curation rounds have discarded good TEs that the other kept.  
+Perhaps, the helitron fragment difference is important
+
+```{r}
+tePlotLib(list(final_libs$D.willistoni_dean, final_libs$D.willistoni_simon))
+```
+
+```{r}
+PlotBlastBarMatches(blasts_c1_vs_c2$D.willistoni_dean_vs_simon)
+SummariseBlastBarMatches(blasts_c1_vs_c2$D.willistoni_dean_vs_simon)
+```
+
+:::
+
+
+# Extract and examine TEs not shared between libraries
+```{r}
+
+GetMissingTEs_wrapper <- function(row) {
+  blast_out_name1   <- paste(row[["species"]], row[["curation1"]], "vs", row[["curation2"]], sep = "_")
+  blast_out_name2   <- paste(row[["species"]], row[["curation2"]], "vs", row[["curation1"]], sep = "_")
+  blast_out_name2MCH   <- paste(row[["species"]], row[["curation2"]], "vs", "MCHelperAuto", sep = "_")
+
+  GetMissingTEs(
+    genome_name = row[["species"]],
+    names_relate_file_Query = row[["curation1_names_relation"]],
+    blast_Genome_Lib1_vs_Lib2 = blasts_c1_vs_c2[[blast_out_name1]],
+    blast_Genome_Lib2_vs_Lib1 = blasts_c2_vs_c1[[blast_out_name2]],
+    blast_Genome_Lib2_vs_MCH = blasts_c2_vs_MCHelperAuto[[blast_out_name2MCH]],
+    lib1_name = row[["curation1"]],
+    lib2_name = row[["curation2"]])
+
+}
+
+apply(df, 1, function(r) GetMissingTEs_wrapper(as.list(r)))
+
+```
