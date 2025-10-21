@@ -953,3 +953,49 @@ PlotBlastBarMatches2 <- function(blast_input) {
   plot_layout(guides = 'collect', ncol = 1) +
   plot_annotation(tag_levels = 'A')
 }
+
+
+lib_compare_copy_missing_TEs <- function(df, 
+                               source_dir, 
+                               dest_base_dir = "MissingFiles",
+                               qseqid_col = "qseqid1", 
+                               match_col = "seq_match") {
+  
+  # Ensure subdirectories exist
+  dir.create(file.path(dest_base_dir, "Missing_from_lib1"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(dest_base_dir, "Missing_from_lib2"), recursive = TRUE, showWarnings = FALSE)
+
+  # Clean the qseqid values (remove everything after #)
+  df$clean_id <- sub("#.*$", "", df[[qseqid_col]])
+
+  # Get list of all files in the source directory
+  all_files <- list.files(source_dir, full.names = TRUE)
+
+  for (i in seq_len(nrow(df))) {
+    name <- df$clean_id[i]
+    match_type <- df[[match_col]][i]
+    match_type <- gsub(" ", "_", match_type)
+
+    # Skip if match_type is not one of the expected values
+    if (!match_type %in% c("Missing_from_lib1", "Missing_from_lib2")) {
+      next
+    }
+
+    # Find matching files (partial match)
+    matched_files <- grep(name, all_files, value = TRUE)
+
+    if (length(matched_files) == 0) {
+      message(sprintf("No file found for %s", name))
+      next
+    }
+
+    # Define destination subdirectory
+    dest_dir <- file.path(dest_base_dir, match_type)
+
+    # Copy all matching files
+    for (file in matched_files) {
+      file.copy(file, dest_dir, overwrite = TRUE)
+      message(sprintf("Copied %s to %s", basename(file), match_type))
+    }
+  }
+}

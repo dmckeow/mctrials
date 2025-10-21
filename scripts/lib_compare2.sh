@@ -18,13 +18,14 @@ MCH_lib=$7    # e.g. path/to/mchelper_autocurated_library.fa
 makeblastdb -in "${lib1}" -dbtype "nucl"
 makeblastdb -in "${lib2}" -dbtype "nucl"
 
+mkdir -p output/lib_compare
 # BLAST the MCHelper auto library against each final lib
 blastn -query "${MCH_lib}" \
   -db "${lib1}" \
   -outfmt 6 -max_hsps 1 \
-  -out "lib_compare_MCHelperAuto_vs_${species}-${strain}-${lib1_name}.blast.out"
+  -out "output/lib_compare/lib_compare_MCHelperAuto_vs_${species}-${strain}-${lib1_name}.blast.out"
 
 blastn -query "${MCH_lib}" \
   -db "${lib2}" \
   -outfmt 6 -max_hsps 1 \
-  -out "lib_compare_MCHelperAuto_vs_${species}-${strain}-${lib2_name}.blast.out"
+  -out "output/lib_compare/lib_compare_MCHelperAuto_vs_${species}-${strain}-${lib2_name}.blast.out"

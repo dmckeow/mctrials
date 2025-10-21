@@ -1,0 +1,120 @@
+---
+title: "Comparing curated TE libraries"
+date: 2025-08-07
+execute:
+  warning: false
+format:
+  html:
+    self-contained: true
+    fig-height: 12
+    fig-width: 12
+    fig-format: png
+    fig-dpi: 300
+---
+
+
+# Comparing results of different TEammo curators
+
+## Run library compare
+## 0. Prerequisites
+- Make conda env for blast
+```{bash}
+module load conda
+conda create -n blast -c conda-forge -c bioconda blast
+```
+
+## 1. Run blast library comparison between your two libraries
+```{bash}
+auto_mchelper_lib="data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa"
+species="D.planitibia"
+strain="NA2"
+lib1="data/MCH_output/D.planitibia/NA2/D.planitibia_NA2_curated-TE-library.fa"
+curator1="Dean"
+lib2="/hddraid5/home/dmckeown/data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta"
+curator2="Marta"
+
+
+conda activate blast
+
+scripts/lib_compare2.sh \
+${lib1} \
+${curator1} \
+${lib2} \
+${curator2} \
+${species} \
+${strain} \
+${auto_mchelper_lib}
+
+```
+
+
+## Load and overall comparisons
+
+```{r}
+#| output: false
+source("scripts/mccompare_functions.R")
+
+library(plotly)
+library(dplyr)
+library(ggplot2)
+library(Biostrings)
+library(tidyr)
+library(seqinr)
+library(patchwork)
+library(forcats)
+library(gt)
+
+# Color schemes
+
+palette_seq_match <- c(
+  "Missing from lib1" = "black",                     
+  "Missing from lib2" = "grey50",                  
+  "Present, <70" = RColorBrewer::brewer.pal(2, "YlGn")[2],
+  "Present, 70" = RColorBrewer::brewer.pal(3, "YlGn")[3],
+  "Present, 80" = RColorBrewer::brewer.pal(4, "YlGn")[4],
+  "Perfect, 95-100" = RColorBrewer::brewer.pal(5, "YlGn")[5]
+)
+
+# Load the TE classifications
+teClassification <- read.table("orozco_classification-2024_mchelper.csv", sep = ";", header = TRUE)
+teClassification <- teClassification %>%
+  mutate(AppName = paste(Class, Order, Superfamily, sep ="/") %>% sub("/$", "", .) %>% sub("/$", "", .))
+teClassification <- rbind(
+  teClassification
+  , c("", "Unclassified", "", "Unclassified")
+)
+
+```
+
+# Load BLAST results and plot comparison
+
+- Here we plot the outputs from `scripts/lib_compare2.sh`
+
+```{r}
+
+Dpla <- LoadBlastComparison2(
+  "output/lib_compare/lib_compare_MCHelperAuto_vs_D.planitibia-NA2-Dean.blast.out",
+  "output/lib_compare/lib_compare_MCHelperAuto_vs_D.planitibia-NA2-Marta.blast.out",
+  "D.planitibia",
+  "NA2",
+  "Dean_vs_Marta",
+)
+
+PlotBlastBarMatches2(Dpla)
+
+
+```
+
+
+# Extract and examine TEs not shared between libraries
+```{r}
+
+df <- Dtri
+source_dir <- "data/MCH_output/D.tristis/nanopore_D2/1_MI_MCH/te_aid/"
+dest_base_dir <- "output/lib_compare/D.tristis"
+
+lib_compare_copy_missing_TEs(df, source_dir, dest_base_dir)
+
+
+
+```
