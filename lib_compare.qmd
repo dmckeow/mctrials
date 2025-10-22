@@ -85,25 +85,31 @@ teClassification <- rbind(
 - Here we plot the outputs from `scripts/lib_compare2.sh`
 
 ```{r}
+lib1_blast_out <- "output/lib_compare/lib_compare_MCHelperAuto_vs_C.elegans-N2-Lucia.blast.out"
+lib2_blast_out <- "output/lib_compare/lib_compare_MCHelperAuto_vs_C.elegans-N2-Adrian.blast.out"
+species <- "C.elegans"
+strain <- "N2"
+comparison <- "Luca_vs_Adrian"
 
-Dpla <- LoadBlastComparison2(
-  "output/lib_compare/lib_compare_MCHelperAuto_vs_D.planitibia-NA2-Dean.blast.out",
-  "output/lib_compare/lib_compare_MCHelperAuto_vs_D.planitibia-NA2-Marta.blast.out",
-  "D.planitibia",
-  "NA2",
-  "Dean_vs_Marta",
+blast_comparison <- LoadBlastComparison2(
+  lib1_blast_out,
+  lib2_blast_out,
+  species,
+  strain,
+  comparison,
 )
 
-PlotBlastBarMatches2(Dpla)
+PlotBlastBarMatches2(blast_comparison)
 
 
 ```
 
 # Extract and examine TEs not shared between libraries
 ## Rerun teaid for the missing TEs
-
+- Beware of TEs added due to automatic database matching - the sseqid1 (name in lib1) and the sseqid2 (name in lib2)
 ```{bash}
-source bash_vars_Dpla
+source bash_vars_Cele_N2
+
 
 bash scripts/rerun_teaid.sh ${auto_mchelper_lib} ${species} ${strain} ${lib1} ${curator1} ${lib2} ${curator2} ${busco_lib} ${genome_path}
 

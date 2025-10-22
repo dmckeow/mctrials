@@ -26,8 +26,7 @@ seqkit grep --threads 4 -r -n -f ${workdir}/missing_from_lib2.csv ${auto_mchelpe
 cd ${workdir}/Missing_from_lib1 || exit 1
 
 conda activate MCHelper
-python3 ~/TEammo/mchelper-ats/MCHelper.py \
-#python3 $(which MCHelper.py) \
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
   -r T \
   --input_type fasta \
   -l ../missing_from_lib1.fa \
@@ -41,8 +40,7 @@ python3 ~/TEammo/mchelper-ats/MCHelper.py \
 cd ${workdir}/Missing_from_lib2 || exit 1
 
 conda activate MCHelper
-python3 ~/TEammo/mchelper-ats/MCHelper.py \
-#python3 $(which MCHelper.py) \
+python3 ~/tools/TEammo/mchelper-ats/MCHelper.py \
   -r T \
   --input_type fasta \
   -l ../missing_from_lib2.fa \
