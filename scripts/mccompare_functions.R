@@ -884,7 +884,33 @@ LoadBlastComparison2 <- function(
     classification2 = paste(class2, order2, superfamily2, sep = "/")
   )
 
-  blast
+  # === Output directory ===
+  output_dir <- paste0("output/lib_compare/", species, "/", strain)
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+
+  # === Filter and write missing IDs ===
+  missing_lib1 <- blast %>%
+    filter(seq_match == "Missing from lib1") %>%
+    select(qseqid1) %>%
+    mutate(qseqid1 = gsub("#.*", "", qseqid1))
+
+  missing_lib2 <- blast %>%
+    filter(seq_match == "Missing from lib2") %>%
+    select(qseqid1) %>%
+    mutate(qseqid1 = gsub("#.*", "", qseqid1))
+
+  # Filenames
+  file_lib1 <- file.path(output_dir, "/missing_from_lib1.csv")
+  file_lib2 <- file.path(output_dir, "/missing_from_lib2.csv")
+
+  # Write files
+  writeLines(missing_lib1$qseqid1, file_lib1)
+  writeLines(missing_lib2$qseqid1, file_lib2)
+
+  # Optionally return blast data frame if needed
+  return(blast)
 }
 
 

@@ -25,14 +25,8 @@ conda create -n blast -c conda-forge -c bioconda blast
 
 ## 1. Run blast library comparison between your two libraries
 ```{bash}
-auto_mchelper_lib="data/MCH_output/D.planitibia/NA2/curated_sequences_NR.fa"
-species="D.planitibia"
-strain="NA2"
-lib1="data/MCH_output/D.planitibia/NA2/D.planitibia_NA2_curated-TE-library.fa"
-curator1="Dean"
-lib2="/hddraid5/home/dmckeown/data/final_libraries/D.planitibia/D.planitibia.TE_library.fasta"
-curator2="Marta"
 
+source bash_vars_Dpla
 
 conda activate blast
 
@@ -105,16 +99,13 @@ PlotBlastBarMatches2(Dpla)
 
 ```
 
-
 # Extract and examine TEs not shared between libraries
-```{r}
+## Rerun teaid for the missing TEs
 
-df <- Dtri
-source_dir <- "data/MCH_output/D.tristis/nanopore_D2/1_MI_MCH/te_aid/"
-dest_base_dir <- "output/lib_compare/D.tristis"
+```{bash}
+source bash_vars_Dpla
 
-lib_compare_copy_missing_TEs(df, source_dir, dest_base_dir)
-
-
+bash scripts/rerun_teaid.sh ${auto_mchelper_lib} ${species} ${strain} ${lib1} ${curator1} ${lib2} ${curator2} ${busco_lib} ${genome_path}
 
 ```
+
